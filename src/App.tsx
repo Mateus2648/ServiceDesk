@@ -322,7 +322,6 @@ function HelpDeskApp() {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .neq('role', 'INACTIVE')
         .order('full_name');
       
       if (error) console.error("Error fetching all profiles:", error);
