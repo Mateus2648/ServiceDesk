@@ -2041,10 +2041,10 @@ function HelpDeskApp() {
                             {selectedTicket.assigned_to ? (
                               <div className="flex items-center gap-2">
                                 <div className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-[10px] font-bold">
-                                  {techs.find(t => t.id === selectedTicket.assigned_to)?.full_name?.[0] || 'T'}
+                                  {allProfiles.find(p => p.id === selectedTicket.assigned_to)?.full_name?.[0] || 'T'}
                                 </div>
                                 <span className="text-sm font-medium text-slate-700">
-                                  {techs.find(t => t.id === selectedTicket.assigned_to)?.full_name || 'Técnico Atribuído'}
+                                  {allProfiles.find(p => p.id === selectedTicket.assigned_to)?.full_name || 'Técnico Atribuído'}
                                 </span>
                               </div>
                             ) : (
