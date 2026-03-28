@@ -1054,7 +1054,7 @@ function HelpDeskApp() {
               <ShieldCheck size={24} />
             </div>
             <div>
-              <h1 className="font-bold text-slate-900 leading-tight">CPD</h1>
+              <h1 className="font-bold text-slate-900 leading-tight">CPD Guaranésia</h1>
               <p className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">Service Desk</p>
             </div>
           </div>
@@ -1588,7 +1588,7 @@ function HelpDeskApp() {
                                 <button 
                                   onClick={() => handleUpdateRole(tech.id, 'ADMIN')}
                                   title="Promover a Administrador"
-                                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all text-xs font-bold shadow-sm shadow-blue-200"
+                                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-all text-[11px] font-bold"
                                 >
                                   <ShieldCheck size={14} />
                                   Tornar Admin
@@ -1596,10 +1596,10 @@ function HelpDeskApp() {
                                 <button 
                                   onClick={() => handleUpdateRole(tech.id, 'USER')}
                                   title="Remover Técnico"
-                                  className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-all text-xs font-bold"
+                                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-all text-[11px] font-bold"
                                 >
                                   <UserMinus size={14} />
-                                  Remover Técnico
+                                  Remover
                                 </button>
                               </div>
                             )}
