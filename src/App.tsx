@@ -89,7 +89,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     if (this.state.hasError) {
       return (
         <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-          <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-xl max-w-md w-full text-center">
+          <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-xl max-w-md w-full text-center dark:bg-slate-800 dark:border-slate-700">
             <div className="w-16 h-16 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
               <AlertTriangle size={32} />
             </div>
@@ -1061,11 +1061,11 @@ function HelpDeskApp() {
       )}>
         <div className="p-6">
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
+            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200 dark:shadow-none">
               <ShieldCheck size={24} />
             </div>
             <div>
-              <h1 className="font-bold text-slate-900 leading-tight">CPD Guaranésia</h1>
+              <h1 className="font-bold text-slate-900 dark:text-white leading-tight">CPD Guaranésia</h1>
               <p className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">Service Desk</p>
             </div>
           </div>
@@ -1206,7 +1206,7 @@ function HelpDeskApp() {
               <Menu size={24} />
             </button>
             <div>
-              <h2 className="text-lg md:text-xl font-bold text-slate-900 truncate">
+              <h2 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white truncate">
                 {view === 'dashboard' ? 'Visão Geral' : 
                  view === 'tickets' ? 'Gerenciamento de Chamados' : 
                  view === 'techs' ? 'Equipe Técnica' : 
@@ -1240,7 +1240,7 @@ function HelpDeskApp() {
                 if (view === 'techs') setIsNewTechModalOpen(true);
                 else setIsNewTicketModalOpen(true);
               }}
-              className="hidden md:flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
+              className="hidden md:flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 dark:shadow-none"
             >
               <Plus size={18} />
               {view === 'techs' ? 'Adicionar Técnico' : 'Novo Chamado'}
@@ -1261,7 +1261,7 @@ function HelpDeskApp() {
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
-                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Taxa de Resolução</p>
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1 dark:text-slate-400">Taxa de Resolução</p>
                     <h3 className="text-3xl font-black text-slate-900 dark:text-white">
                       {stats.total > 0 ? Math.round((stats.finished / stats.total) * 100) : 0}%
                     </h3>
@@ -1273,19 +1273,19 @@ function HelpDeskApp() {
                     </div>
                   </div>
                   <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
-                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Média de Prioridade</p>
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1 dark:text-slate-400">Média de Prioridade</p>
                     <h3 className="text-3xl font-black text-slate-900 dark:text-white">
                       {stats.byPriority.find(p => p.name === 'Alta')?.value || 0}
                     </h3>
                     <p className="text-[10px] text-red-500 font-bold mt-1 uppercase">Chamados de Alta Prioridade</p>
                   </div>
                   <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
-                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Total de Técnicos</p>
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1 dark:text-slate-400">Total de Técnicos</p>
                     <h3 className="text-3xl font-black text-slate-900 dark:text-white">{techs.length}</h3>
                     <p className="text-[10px] text-blue-600 font-bold mt-1 uppercase">Membros da Equipe</p>
                   </div>
                   <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
-                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Aguardando</p>
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1 dark:text-slate-400">Aguardando</p>
                     <h3 className="text-3xl font-black text-slate-900 dark:text-white">
                       {tickets.filter(t => t.status === 'WAITING').length}
                     </h3>
@@ -1373,11 +1373,11 @@ function HelpDeskApp() {
                       const colors = ['bg-blue-500', 'bg-orange-500', 'bg-green-500', 'bg-purple-500', 'bg-pink-500'];
                       
                       return (
-                        <div key={cat} className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{cat}</p>
+                        <div key={cat} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 dark:bg-slate-700 dark:border-slate-600">
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 dark:text-slate-400">{cat}</p>
                           <div className="flex items-end justify-between">
-                            <h5 className="text-2xl font-black text-slate-900">{count}</h5>
-                            <span className="text-xs font-bold text-slate-400">{percentage}%</span>
+                            <h5 className="text-2xl font-black text-slate-900 dark:text-white">{count}</h5>
+                            <span className="text-xs font-bold text-slate-400 dark:text-slate-400">{percentage}%</span>
                           </div>
                           <div className="w-full h-1 bg-slate-200 rounded-full mt-3 overflow-hidden">
                             <div className={cn("h-full transition-all duration-1000", colors[idx])} style={{ width: `${percentage}%` }} />
@@ -1400,7 +1400,7 @@ function HelpDeskApp() {
               >
                 {/* Pending Requests Section */}
                 {pendingUsers.length > 0 && (
-                  <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700">
                     <div className="px-6 py-4 bg-blue-50 border-b border-slate-200 flex items-center justify-between">
                       <h3 className="text-sm font-bold text-blue-900 flex items-center gap-2">
                         <ShieldCheck size={18} />
@@ -1726,35 +1726,35 @@ function HelpDeskApp() {
               >
                 {/* Stats Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
                     <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-4">
                       <TicketIcon size={24} />
                     </div>
                     <p className="text-slate-400 text-sm font-medium">Total de Chamados</p>
-                    <h3 className="text-3xl font-bold mt-1">{stats.total}</h3>
+                    <h3 className="text-3xl font-bold mt-1 dark:text-white">{stats.total}</h3>
                   </div>
-                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
                     <div className="w-12 h-12 bg-orange-50 text-orange-600 rounded-2xl flex items-center justify-center mb-4">
                       <Clock size={24} />
                     </div>
                     <p className="text-slate-400 text-sm font-medium">Em Aberto</p>
                     <h3 className="text-3xl font-bold mt-1 text-orange-600">{stats.open}</h3>
                   </div>
-                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
                     <div className="w-12 h-12 bg-yellow-50 text-yellow-600 rounded-2xl flex items-center justify-center mb-4">
                       <AlertCircle size={24} />
                     </div>
                     <p className="text-slate-400 text-sm font-medium">Em Atendimento</p>
                     <h3 className="text-3xl font-bold mt-1 text-yellow-600">{stats.inProgress}</h3>
                   </div>
-                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
                     <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mb-4">
                       <Clock size={24} />
                     </div>
                     <p className="text-slate-400 text-sm font-medium">Aguardando</p>
                     <h3 className="text-3xl font-bold mt-1 text-purple-600">{stats.waiting}</h3>
                   </div>
-                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
                     <div className="w-12 h-12 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center mb-4">
                       <CheckCircle2 size={24} />
                     </div>
@@ -1764,7 +1764,7 @@ function HelpDeskApp() {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  <div className="lg:col-span-2 bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
+                  <div className="lg:col-span-2 bg-white p-8 rounded-3xl border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
                     <div className="flex items-center justify-between mb-8">
                       <h4 className="font-bold text-slate-800">Volume de Chamados por Categoria</h4>
                     </div>
@@ -1850,7 +1850,7 @@ function HelpDeskApp() {
                 exit={{ opacity: 0, x: -20 }}
                 className="space-y-6"
               >
-                <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200 overflow-x-auto">
+                <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200 overflow-x-auto dark:bg-slate-800 dark:border-slate-700">
                   <div className="flex items-center gap-2 min-w-max">
                     <button 
                       onClick={() => setFilterStatus('ALL')}
@@ -1885,7 +1885,7 @@ function HelpDeskApp() {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
+                <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm dark:bg-slate-800 dark:border-slate-700">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse min-w-[600px]">
                       <thead>
@@ -2068,7 +2068,7 @@ function HelpDeskApp() {
                 </div>
 
                 <div className="space-y-6">
-                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
                     <h5 className="font-bold text-slate-800 mb-6">Informações do Chamado</h5>
                     <div className="space-y-4">
                       <div>
@@ -2141,7 +2141,7 @@ function HelpDeskApp() {
                   </div>
 
                   {selectedTicket.ai_suggestion && (
-                    <div className="bg-blue-600 p-6 rounded-3xl text-white shadow-lg shadow-blue-200">
+                    <div className="bg-blue-600 p-6 rounded-3xl text-white shadow-lg shadow-blue-200 dark:shadow-none">
                       <div className="flex items-center gap-3 mb-4">
                         <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
                           <ShieldCheck size={20} />
@@ -2165,7 +2165,7 @@ function HelpDeskApp() {
             if (view === 'techs') setIsNewTechModalOpen(true);
             else setIsNewTicketModalOpen(true);
           }}
-          className="md:hidden fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg shadow-blue-600/30 flex items-center justify-center hover:bg-blue-700 active:scale-95 transition-all z-50"
+          className="md:hidden fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg shadow-blue-600/30 dark:shadow-none flex items-center justify-center hover:bg-blue-700 active:scale-95 transition-all z-50"
         >
           <Plus size={24} />
         </button>
@@ -2261,7 +2261,7 @@ function HelpDeskApp() {
               <div className="p-8">
                 <div className="flex items-center justify-between mb-8">
                   <div>
-                    <h3 className="text-2xl font-bold text-slate-900">Abrir Novo Chamado</h3>
+                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Abrir Novo Chamado</h3>
                     <p className="text-sm text-slate-400">Descreva o problema detalhadamente</p>
                   </div>
                   <button 
