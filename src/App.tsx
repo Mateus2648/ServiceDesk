@@ -280,57 +280,53 @@ function HelpDeskApp() {
     }
   };
 
+  const fetchStaff = async () => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .in('role', ['TECH', 'ADMIN']);
+    
+    if (error) console.error("Error fetching staff:", error);
+    else {
+      const staff = data as User[];
+      setTechs(staff.filter(u => u.role === 'TECH'));
+      setAdmins(staff.filter(u => u.role === 'ADMIN'));
+    }
+  };
+
+  const fetchPendingUsers = async () => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('role', 'PENDING');
+    
+    if (error) console.error("Error fetching pending users:", error);
+    else setPendingUsers(data as User[]);
+  };
+
+  const fetchRegularUsers = async () => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('role', 'USER');
+    
+    if (error) console.error("Error fetching regular users:", error);
+    else setRegularUsers(data as User[]);
+  };
+
   // Techs Listener
   useEffect(() => {
     if (!isAuthReady || !currentUser || (userProfile?.role !== 'ADMIN' && userProfile?.role !== 'TECH')) return;
 
-    const fetchStaff = async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .in('role', ['TECH', 'ADMIN']);
-      
-      if (error) console.error("Error fetching staff:", error);
-      else {
-        const staff = data as User[];
-        setTechs(staff.filter(u => u.role === 'TECH'));
-        setAdmins(staff.filter(u => u.role === 'ADMIN'));
-      }
-    };
-
-    const fetchPendingUsers = async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('role', 'PENDING');
-      
-      if (error) console.error("Error fetching pending users:", error);
-      else setPendingUsers(data as User[]);
-    };
-
-    const fetchRegularUsers = async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('role', 'USER');
-      
-      if (error) console.error("Error fetching regular users:", error);
-      else setRegularUsers(data as User[]);
-    };
-
-    const fetchAllProfiles = async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('full_name');
-      
-      if (error) console.error("Error fetching all profiles:", error);
-      else setAllProfiles(data as User[]);
-    };
-
     fetchStaff();
     fetchPendingUsers();
     fetchRegularUsers();
+  }, [isAuthReady, currentUser, userProfile]);
+
+  // General Profiles Listener
+  useEffect(() => {
+    if (!isAuthReady || !currentUser) return;
+
     fetchAllProfiles();
 
     const channel = supabase
@@ -340,15 +336,29 @@ function HelpDeskApp() {
         if (payload.new && (payload.new as User).id === currentUser.id) {
           setUserProfile(payload.new as User);
         }
-        fetchStaff();
-        fetchPendingUsers();
-        fetchRegularUsers();
         fetchAllProfiles();
+        
+        // Only fetch staff/pending if user is admin/tech
+        if (userProfile?.role === 'ADMIN' || userProfile?.role === 'TECH') {
+          fetchStaff();
+          fetchPendingUsers();
+          fetchRegularUsers();
+        }
       })
       .subscribe();
 
     return () => { channel.unsubscribe(); };
   }, [isAuthReady, currentUser, userProfile]);
+
+  const fetchAllProfiles = async () => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .order('full_name');
+    
+    if (error) console.error("Error fetching all profiles:", error);
+    else setAllProfiles(data as User[]);
+  };
 
   const fetchTickets = useCallback(async () => {
     if (!currentUser || !userProfile) return;
