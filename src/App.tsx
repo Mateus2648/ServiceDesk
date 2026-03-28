@@ -1860,7 +1860,12 @@ function HelpDeskApp() {
                         >
                           <td className="px-6 py-5">
                             <div>
-                              <p className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">#{ticket.id.slice(-5)} - {ticket.title}</p>
+                              <div className="flex items-center gap-2">
+                                <p className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">#{ticket.id.slice(-5)} - {ticket.title}</p>
+                                {new Date(ticket.updated_at) > new Date(Date.now() - 24 * 60 * 60 * 1000) && (
+                                  <span className="inline-block w-2 h-2 bg-blue-500 rounded-full" title="Atualizado recentemente" />
+                                )}
+                              </div>
                               <p className="text-xs text-slate-400 mt-0.5">{ticket.category}</p>
                             </div>
                           </td>
