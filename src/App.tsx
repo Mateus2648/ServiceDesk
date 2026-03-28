@@ -1260,9 +1260,9 @@ function HelpDeskApp() {
               >
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
-                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1 dark:text-slate-400">Taxa de Resolução</p>
-                    <h3 className="text-3xl font-black text-slate-900 dark:text-white">
+                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Taxa de Resolução</p>
+                    <h3 className="text-3xl font-black text-slate-900">
                       {stats.total > 0 ? Math.round((stats.finished / stats.total) * 100) : 0}%
                     </h3>
                     <div className="w-full h-1.5 bg-slate-100 rounded-full mt-3 overflow-hidden">
@@ -1272,21 +1272,21 @@ function HelpDeskApp() {
                       />
                     </div>
                   </div>
-                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
-                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1 dark:text-slate-400">Média de Prioridade</p>
-                    <h3 className="text-3xl font-black text-slate-900 dark:text-white">
+                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Média de Prioridade</p>
+                    <h3 className="text-3xl font-black text-slate-900">
                       {stats.byPriority.find(p => p.name === 'Alta')?.value || 0}
                     </h3>
                     <p className="text-[10px] text-red-500 font-bold mt-1 uppercase">Chamados de Alta Prioridade</p>
                   </div>
-                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
-                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1 dark:text-slate-400">Total de Técnicos</p>
-                    <h3 className="text-3xl font-black text-slate-900 dark:text-white">{techs.length}</h3>
+                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Total de Técnicos</p>
+                    <h3 className="text-3xl font-black text-slate-900">{techs.length}</h3>
                     <p className="text-[10px] text-blue-600 font-bold mt-1 uppercase">Membros da Equipe</p>
                   </div>
-                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
-                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1 dark:text-slate-400">Aguardando</p>
-                    <h3 className="text-3xl font-black text-slate-900 dark:text-white">
+                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Aguardando</p>
+                    <h3 className="text-3xl font-black text-slate-900">
                       {tickets.filter(t => t.status === 'WAITING').length}
                     </h3>
                     <p className="text-[10px] text-purple-600 font-bold mt-1 uppercase">Pendentes de Terceiros</p>
@@ -1295,7 +1295,7 @@ function HelpDeskApp() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   {/* Priority Chart */}
-                  <div className="bg-white p-8 rounded-[32px] border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
+                  <div className="bg-white p-8 rounded-[32px] border border-slate-200 shadow-sm">
                     <h4 className="font-bold text-slate-900 dark:text-white mb-8 flex items-center gap-2">
                       <AlertTriangle size={20} className="text-orange-500" />
                       Distribuição por Prioridade
@@ -1400,7 +1400,7 @@ function HelpDeskApp() {
               >
                 {/* Pending Requests Section */}
                 {pendingUsers.length > 0 && (
-                  <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden dark:bg-slate-800 dark:border-slate-700">
+                  <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
                     <div className="px-6 py-4 bg-blue-50 border-b border-slate-200 flex items-center justify-between">
                       <h3 className="text-sm font-bold text-blue-900 flex items-center gap-2">
                         <ShieldCheck size={18} />
