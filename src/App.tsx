@@ -1946,10 +1946,18 @@ function HelpDeskApp() {
                                 : "bg-slate-100 text-slate-700 rounded-tl-none"
                             )}>
                               <p>{interaction.content}</p>
-                              <p className={cn(
-                                "text-[10px] mt-2",
-                                interaction.user_id === currentUser.id ? "text-blue-200" : "text-slate-400"
-                              )}>{new Date(interaction.created_at).toLocaleString('pt-BR')}</p>
+                              <div className="flex justify-between items-center mt-2 gap-2">
+                                <p className={cn(
+                                  "text-[9px] font-bold uppercase tracking-wider",
+                                  interaction.user_id === currentUser.id ? "text-blue-200" : "text-slate-400"
+                                )}>
+                                  {allProfiles.find(p => p.id === interaction.user_id)?.full_name || 'Usuário'}
+                                </p>
+                                <p className={cn(
+                                  "text-[10px]",
+                                  interaction.user_id === currentUser.id ? "text-blue-200" : "text-slate-400"
+                                )}>{new Date(interaction.created_at).toLocaleString('pt-BR')}</p>
+                              </div>
                             </div>
                           </div>
                         ))}
@@ -1994,6 +2002,10 @@ function HelpDeskApp() {
                   <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
                     <h5 className="font-bold text-slate-800 mb-6">Informações do Chamado</h5>
                     <div className="space-y-4">
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Criado por</p>
+                        <p className="text-sm font-semibold text-slate-700">{allProfiles.find(p => p.id === selectedTicket.created_by)?.full_name || 'Usuário Desconhecido'}</p>
+                      </div>
                       <div>
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Secretaria</p>
                         <p className="text-sm font-semibold text-slate-700">{selectedTicket.secretariat}</p>
