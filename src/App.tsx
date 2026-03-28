@@ -33,7 +33,9 @@ import {
   ShieldAlert,
   Wrench,
   X,
-  Menu
+  Menu,
+  Moon,
+  Sun
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -145,7 +147,17 @@ function HelpDeskApp() {
   const [userProfile, setUserProfile] = useState<User | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [view, setView] = useState<'dashboard' | 'tickets' | 'detail' | 'techs' | 'admins' | 'users' | 'reports'>('dashboard');
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const [tickets, setTickets] = useState<Ticket[]>([]);
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
+
   const [ticketViews, setTicketViews] = useState<any[]>([]);
   const [interactions, setInteractions] = useState<TicketInteraction[]>([]);
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
@@ -1165,9 +1177,12 @@ function HelpDeskApp() {
                 <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider">{userProfile?.role}</p>
               </div>
             </div>
-            <button className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-white hover:shadow-sm transition-all border border-transparent hover:border-slate-200">
-              <Settings size={14} />
-              Configurações
+            <button 
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-white hover:shadow-sm transition-all border border-transparent hover:border-slate-200 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:border-slate-600"
+            >
+              {isDarkMode ? <Sun size={14} /> : <Moon size={14} />}
+              {isDarkMode ? 'Modo Claro' : 'Visão Noturna'}
             </button>
           </div>
           <button 
