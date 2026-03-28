@@ -1054,7 +1054,7 @@ function HelpDeskApp() {
               <ShieldCheck size={24} />
             </div>
             <div>
-              <h1 className="font-bold text-slate-900 leading-tight">Centro de Processamento de Dados</h1>
+              <h1 className="font-bold text-slate-900 leading-tight">CPD</h1>
               <p className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">Service Desk</p>
             </div>
           </div>
