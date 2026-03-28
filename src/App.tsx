@@ -146,15 +146,38 @@ function HelpDeskApp() {
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [view, setView] = useState<'dashboard' | 'tickets' | 'detail' | 'techs' | 'admins' | 'users' | 'reports'>('dashboard');
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [ticketViews, setTicketViews] = useState<any[]>([]);
   const [interactions, setInteractions] = useState<TicketInteraction[]>([]);
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
 
   type ViewType = 'dashboard' | 'tickets' | 'detail' | 'techs' | 'admins' | 'users' | 'reports';
 
-  const navigateTo = (newView: ViewType, ticketId: string | null = null) => {
+  const navigateTo = async (newView: ViewType, ticketId: string | null = null) => {
     setView(newView);
     setSelectedTicketId(ticketId);
     window.history.pushState({ view: newView, ticketId }, '', '');
+    if (ticketId) {
+      await markAsViewed(ticketId);
+    }
+  };
+
+  const markAsViewed = async (ticketId: string) => {
+    if (!currentUser) return;
+    
+    // Upsert (insere ou atualiza) a data de visualização
+    const { data, error } = await supabase
+      .from('ticket_views')
+      .upsert({ 
+        user_id: currentUser.id, 
+        ticket_id: ticketId, 
+        last_viewed_at: new Date().toISOString() 
+      }, { onConflict: 'user_id, ticket_id' })
+      .select()
+      .single();
+      
+    if (!error && data) {
+      setTicketViews(prev => [...prev.filter(v => v.ticket_id !== ticketId), data]);
+    }
   };
 
   useEffect(() => {
@@ -328,6 +351,7 @@ function HelpDeskApp() {
     if (!isAuthReady || !currentUser) return;
 
     fetchAllProfiles();
+    fetchTicketViews();
 
     const channel = supabase
       .channel('profiles_changes')
@@ -349,6 +373,15 @@ function HelpDeskApp() {
 
     return () => { channel.unsubscribe(); };
   }, [isAuthReady, currentUser, userProfile]);
+
+  const fetchTicketViews = async () => {
+    if (!currentUser) return;
+    const { data } = await supabase
+      .from('ticket_views')
+      .select('*')
+      .eq('user_id', currentUser.id);
+    if (data) setTicketViews(data);
+  };
 
   const fetchAllProfiles = async () => {
     const { data, error } = await supabase
@@ -1862,9 +1895,16 @@ function HelpDeskApp() {
                             <div>
                               <div className="flex items-center gap-2">
                                 <p className="font-bold text-slate-900 group-hover:text-blue-600 transition-colors">#{ticket.id.slice(-5)} - {ticket.title}</p>
-                                {new Date(ticket.updated_at) > new Date(Date.now() - 24 * 60 * 60 * 1000) && (
-                                  <span className="inline-block w-2 h-2 bg-blue-500 rounded-full" title="Atualizado recentemente" />
-                                )}
+                                {(() => {
+                                  const view = ticketViews.find(v => v.ticket_id === ticket.id);
+                                  const lastViewed = view ? new Date(view.last_viewed_at) : new Date(0);
+                                  const updated = new Date(ticket.updated_at);
+                                  
+                                  if (updated > lastViewed) {
+                                    return <span className="inline-block w-2 h-2 bg-blue-500 rounded-full" title="Novo comentário ou atualização" />;
+                                  }
+                                  return null;
+                                })()}
                               </div>
                               <p className="text-xs text-slate-400 mt-0.5">{ticket.category}</p>
                             </div>
