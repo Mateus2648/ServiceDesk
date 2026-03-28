@@ -1045,7 +1045,7 @@ function HelpDeskApp() {
   }
 
   return (
-    <div className="flex h-screen bg-[#F8FAFC] text-slate-900 font-sans overflow-hidden">
+    <div className="flex h-screen bg-[#F8FAFC] text-slate-900 font-sans overflow-hidden dark:bg-slate-900 dark:text-slate-100">
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <div 
@@ -1056,7 +1056,7 @@ function HelpDeskApp() {
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed md:relative w-64 h-full bg-white border-r border-slate-200 flex flex-col z-50 transition-transform duration-300",
+        "fixed md:relative w-64 h-full bg-white border-r border-slate-200 flex flex-col z-50 transition-transform duration-300 dark:bg-slate-800 dark:border-slate-700",
         isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
       )}>
         <div className="p-6">
@@ -1197,7 +1197,7 @@ function HelpDeskApp() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto w-full">
-        <header className="h-16 md:h-20 bg-white border-b border-slate-200 px-4 md:px-8 flex items-center justify-between sticky top-0 z-10">
+        <header className="h-16 md:h-20 bg-white border-b border-slate-200 px-4 md:px-8 flex items-center justify-between sticky top-0 z-10 dark:bg-slate-800 dark:border-slate-700">
           <div className="flex items-center gap-3">
             <button 
               onClick={() => setIsMobileMenuOpen(true)}
@@ -1260,9 +1260,9 @@ function HelpDeskApp() {
               >
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
                     <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Taxa de Resolução</p>
-                    <h3 className="text-3xl font-black text-slate-900">
+                    <h3 className="text-3xl font-black text-slate-900 dark:text-white">
                       {stats.total > 0 ? Math.round((stats.finished / stats.total) * 100) : 0}%
                     </h3>
                     <div className="w-full h-1.5 bg-slate-100 rounded-full mt-3 overflow-hidden">
@@ -1272,21 +1272,21 @@ function HelpDeskApp() {
                       />
                     </div>
                   </div>
-                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
                     <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Média de Prioridade</p>
-                    <h3 className="text-3xl font-black text-slate-900">
+                    <h3 className="text-3xl font-black text-slate-900 dark:text-white">
                       {stats.byPriority.find(p => p.name === 'Alta')?.value || 0}
                     </h3>
                     <p className="text-[10px] text-red-500 font-bold mt-1 uppercase">Chamados de Alta Prioridade</p>
                   </div>
-                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
                     <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Total de Técnicos</p>
-                    <h3 className="text-3xl font-black text-slate-900">{techs.length}</h3>
+                    <h3 className="text-3xl font-black text-slate-900 dark:text-white">{techs.length}</h3>
                     <p className="text-[10px] text-blue-600 font-bold mt-1 uppercase">Membros da Equipe</p>
                   </div>
-                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                  <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
                     <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Aguardando</p>
-                    <h3 className="text-3xl font-black text-slate-900">
+                    <h3 className="text-3xl font-black text-slate-900 dark:text-white">
                       {tickets.filter(t => t.status === 'WAITING').length}
                     </h3>
                     <p className="text-[10px] text-purple-600 font-bold mt-1 uppercase">Pendentes de Terceiros</p>
@@ -1295,8 +1295,8 @@ function HelpDeskApp() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   {/* Priority Chart */}
-                  <div className="bg-white p-8 rounded-[32px] border border-slate-200 shadow-sm">
-                    <h4 className="font-bold text-slate-900 mb-8 flex items-center gap-2">
+                  <div className="bg-white p-8 rounded-[32px] border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
+                    <h4 className="font-bold text-slate-900 dark:text-white mb-8 flex items-center gap-2">
                       <AlertTriangle size={20} className="text-orange-500" />
                       Distribuição por Prioridade
                     </h4>
@@ -1333,8 +1333,8 @@ function HelpDeskApp() {
                   </div>
 
                   {/* Tech Performance */}
-                  <div className="bg-white p-8 rounded-[32px] border border-slate-200 shadow-sm">
-                    <h4 className="font-bold text-slate-900 mb-8 flex items-center gap-2">
+                  <div className="bg-white p-8 rounded-[32px] border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
+                    <h4 className="font-bold text-slate-900 dark:text-white mb-8 flex items-center gap-2">
                       <Users size={20} className="text-blue-500" />
                       Desempenho da Equipe
                     </h4>
@@ -1364,8 +1364,8 @@ function HelpDeskApp() {
                 </div>
 
                 {/* Category Breakdown */}
-                <div className="bg-white p-8 rounded-[32px] border border-slate-200 shadow-sm">
-                  <h4 className="font-bold text-slate-900 mb-8">Chamados por Categoria</h4>
+                <div className="bg-white p-8 rounded-[32px] border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700">
+                  <h4 className="font-bold text-slate-900 dark:text-white mb-8">Chamados por Categoria</h4>
                   <div className="grid grid-cols-5 gap-4">
                     {['Hardware', 'Software', 'Rede', 'Telefonia', 'Outros'].map((cat, idx) => {
                       const count = tickets.filter(t => t.category === cat).length;
