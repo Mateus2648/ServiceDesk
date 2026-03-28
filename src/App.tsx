@@ -322,6 +322,7 @@ function HelpDeskApp() {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
+        .neq('role', 'INACTIVE')
         .order('full_name');
       
       if (error) console.error("Error fetching all profiles:", error);
@@ -582,12 +583,12 @@ function HelpDeskApp() {
       return;
     }
 
-    if (!window.confirm("Tem certeza que deseja rejeitar e excluir esta solicitação?")) return;
+    if (!window.confirm("Tem certeza que deseja rejeitar esta solicitação? O usuário será desativado e não poderá mais solicitar acesso.")) return;
 
     try {
       const { error } = await supabase
         .from('profiles')
-        .delete()
+        .update({ role: 'INACTIVE' })
         .eq('id', userId);
       
       if (error) throw error;
@@ -607,16 +608,16 @@ function HelpDeskApp() {
 
   const handleDeleteUser = async (userId: string) => {
     if (userProfile?.role !== 'ADMIN') {
-      toast.error("Apenas administradores podem excluir usuários do sistema.");
+      toast.error("Apenas administradores podem desativar usuários do sistema.");
       return;
     }
 
-    if (!window.confirm("Tem certeza que deseja excluir este usuário permanentemente? Esta ação não pode ser desfeita.")) return;
+    if (!window.confirm("Tem certeza que deseja desativar este usuário? O histórico de chamados e mensagens será mantido, mas o usuário perderá o acesso ao sistema e não aparecerá mais nas listas de usuários ativos.")) return;
 
     try {
       const { error } = await supabase
         .from('profiles')
-        .delete()
+        .update({ role: 'INACTIVE' })
         .eq('id', userId);
       
       if (error) throw error;
@@ -624,13 +625,13 @@ function HelpDeskApp() {
       // Audit Log
       await supabase.from('audit_logs').insert([{
         user_id: currentUser?.id,
-        action: 'USER_DELETED',
+        action: 'USER_DEACTIVATED',
         new_state: { userId }
       }]);
-      toast.success('Usuário excluído com sucesso');
+      toast.success('Usuário desativado com sucesso');
     } catch (error: any) {
-      console.error("Error deleting user:", error);
-      toast.error("Erro ao excluir usuário: " + error.message);
+      console.error("Error deactivating user:", error);
+      toast.error("Erro ao desativar usuário: " + error.message);
     }
   };
 
@@ -818,6 +819,30 @@ function HelpDeskApp() {
     }
   };
 
+  const handleRequestAccessAgain = async () => {
+    if (!currentUser) return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role: 'PENDING' })
+        .eq('id', currentUser.id);
+      
+      if (error) throw error;
+      
+      // Audit Log
+      await supabase.from('audit_logs').insert([{
+        user_id: currentUser.id,
+        action: 'USER_RE_REQUESTED_ACCESS',
+        new_state: { userId: currentUser.id }
+      }]);
+      toast.success('Solicitação de acesso enviada com sucesso!');
+    } catch (error: any) {
+      console.error("Error re-requesting access:", error);
+      toast.error("Erro ao solicitar acesso: " + error.message);
+    }
+  };
+
   if (!isAuthReady) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -825,6 +850,49 @@ function HelpDeskApp() {
           <Loader2 className="animate-spin text-blue-600 mx-auto mb-4" size={48} />
           <p className="text-slate-500 font-medium">Iniciando sistema...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (currentUser && userProfile?.role === 'INACTIVE') {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="max-w-md w-full bg-white p-12 rounded-[40px] border border-slate-200 shadow-2xl text-center space-y-8"
+        >
+          <div className="w-24 h-24 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
+            <UserMinus size={48} />
+          </div>
+          <div className="space-y-4">
+            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Acesso Bloqueado</h1>
+            <p className="text-slate-500 leading-relaxed">
+              Olá, <span className="font-bold text-slate-900">{userProfile.full_name}</span>. 
+              Sua conta foi desativada por um administrador. Você não tem mais permissão para acessar o sistema.
+            </p>
+          </div>
+          <div className="p-4 bg-red-50 rounded-2xl border border-red-100">
+            <p className="text-xs font-bold text-red-600 uppercase tracking-widest">Status da Conta</p>
+            <p className="text-sm font-medium text-red-800 mt-1">Conta Inativa</p>
+          </div>
+          <div className="space-y-3">
+            <button 
+              onClick={handleRequestAccessAgain}
+              className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
+            >
+              <ShieldCheck size={20} />
+              Solicitar Acesso Novamente
+            </button>
+            <button 
+              onClick={() => signOut()}
+              className="w-full py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all flex items-center justify-center gap-2"
+            >
+              <LogOut size={20} />
+              Sair da Conta
+            </button>
+          </div>
+        </motion.div>
       </div>
     );
   }

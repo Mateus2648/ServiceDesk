@@ -10,7 +10,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export type Role = 'PENDING' | 'USER' | 'TECH' | 'ADMIN';
+export type Role = 'PENDING' | 'USER' | 'TECH' | 'ADMIN' | 'INACTIVE';
 export type TicketStatus = 'OPEN' | 'IN_PROGRESS' | 'WAITING' | 'FINISHED';
 export type Priority = 'LOW' | 'MEDIUM' | 'HIGH';
 
