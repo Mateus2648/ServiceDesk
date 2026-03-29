@@ -17,15 +17,18 @@ export default async function handler(req: any, res: any) {
     const transporter = nodemailer.createTransport({
       host: SMTP_HOST,
       port: parseInt(SMTP_PORT),
-      secure: parseInt(SMTP_PORT) === 465, // true para 465, false para outros
+      secure: parseInt(SMTP_PORT) === 465,
       auth: {
         user: SMTP_USER,
         pass: SMTP_PASS,
       },
     });
 
+    // Para evitar erro 550 (Spoofing not allowed), o 'from' deve ser o e-mail autenticado
+    const fromAddress = SMTP_USER;
+
     const info = await transporter.sendMail({
-      from: SMTP_FROM || SMTP_USER,
+      from: `CPD Guaranésia <${fromAddress}>`,
       to: Array.isArray(to) ? to.join(", ") : to,
       subject,
       html,
