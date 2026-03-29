@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo, useCallback, Component } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, Component, useRef } from 'react';
 import { 
   LayoutDashboard, 
   Ticket as TicketIcon, 
@@ -141,6 +141,8 @@ const PriorityBadge = ({ priority }: { priority: Priority }) => {
 // --- MAIN APP ---
 
 function HelpDeskApp() {
+  const notificationTimeouts = useRef<Record<string, any>>({});
+  const notificationBuffer = useRef<Record<string, { messages: string[], subjects: Set<string> }>>({});
   const [currentUser, setCurrentUser] = useState<SupabaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<User | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
@@ -701,15 +703,48 @@ function HelpDeskApp() {
     }
   };
 
-  const sendNotification = async (ticketId: string, subject: string, message: string) => {
+  const sendNotification = (ticketId: string, subject: string, message: string) => {
+    // Initialize buffer for this ticket if it doesn't exist
+    if (!notificationBuffer.current[ticketId]) {
+      notificationBuffer.current[ticketId] = { messages: [], subjects: new Set() };
+    }
+
+    // Add to buffer
+    notificationBuffer.current[ticketId].messages.push(message);
+    notificationBuffer.current[ticketId].subjects.add(subject);
+
+    // Clear existing timeout
+    if (notificationTimeouts.current[ticketId]) {
+      clearTimeout(notificationTimeouts.current[ticketId]);
+    }
+
+    // Set new timeout (10 minutes)
+    notificationTimeouts.current[ticketId] = setTimeout(() => {
+      executeNotification(ticketId);
+    }, 300000);
+  };
+
+  const executeNotification = async (ticketId: string) => {
+    const buffer = notificationBuffer.current[ticketId];
+    if (!buffer) return;
+
+    const consolidatedMessages = buffer.messages.join('<br/><br/>');
+    const subjects = Array.from(buffer.subjects);
+    const consolidatedSubject = subjects.length > 1 ? 'Múltiplas Atualizações' : subjects[0];
+    
+    // Clear buffer and timeout reference before starting async work
+    delete notificationBuffer.current[ticketId];
+    delete notificationTimeouts.current[ticketId];
+
     try {
-      let ticket = tickets.find(t => t.id === ticketId);
+      // Fetch latest ticket state to ensure accuracy
+      const { data: ticket, error: ticketError } = await supabase
+        .from('tickets')
+        .select('*')
+        .eq('id', ticketId)
+        .single();
       
-      if (!ticket) {
-        const { data, error } = await supabase.from('tickets').select('*').eq('id', ticketId).single();
-        if (error || !data) return;
-        ticket = data as Ticket;
-      }
+      if (ticketError || !ticket) return;
 
       let currentProfiles = allProfiles;
       if (currentProfiles.length === 0) {
@@ -748,7 +783,7 @@ function HelpDeskApp() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           to: uniqueRecipients,
-          subject: `[CPD Guaranésia] ${subject} - Chamado #${ticketId.slice(0, 8)}`,
+          subject: `[CPD Guaranésia] ${consolidatedSubject} - Chamado #${ticketId.slice(0, 8)}`,
           html: `
             <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
               <div style="background-color: #2563eb; padding: 24px; text-align: center;">
@@ -757,7 +792,7 @@ function HelpDeskApp() {
               
               <div style="padding: 32px; color: #1f2937;">
                 <h2 style="margin-top: 0; color: #111827; font-size: 18px; font-weight: 600;">Olá,</h2>
-                <p style="font-size: 16px; color: #4b5563; margin-bottom: 24px;">Houve uma nova movimentação no seu chamado. Confira os detalhes abaixo:</p>
+                <p style="font-size: 16px; color: #4b5563; margin-bottom: 24px;">Houve novas movimentações no seu chamado. Confira os detalhes abaixo:</p>
                 
                 <div style="background-color: #f9fafb; border-left: 4px solid #2563eb; padding: 20px; border-radius: 4px; margin-bottom: 24px;">
                   <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Chamado</p>
@@ -776,7 +811,7 @@ function HelpDeskApp() {
                 </div>
 
                 <div style="background-color: #eff6ff; padding: 20px; border-radius: 8px; border: 1px solid #dbeafe;">
-                  <p style="margin: 0; font-size: 15px; color: #1e40af; line-height: 1.6;">${message}</p>
+                  <div style="font-size: 15px; color: #1e40af; line-height: 1.6;">${consolidatedMessages}</div>
                 </div>
 
                 <div style="margin-top: 32px; text-align: center;">
