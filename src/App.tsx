@@ -33,7 +33,11 @@ import {
   ShieldAlert,
   Wrench,
   X,
-  Menu
+  Menu,
+  DownloadCloud,
+  ExternalLink,
+  Edit,
+  Trash
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -56,6 +60,7 @@ import {
   type TicketStatus, 
   type Priority,
   type Role,
+  type Download,
   analyzeTicketWithAI
 } from './types';
 import { SECRETARIAS } from './constants';
@@ -146,8 +151,9 @@ function HelpDeskApp() {
   const [currentUser, setCurrentUser] = useState<SupabaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<User | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
-  const [view, setView] = useState<'dashboard' | 'tickets' | 'detail' | 'techs' | 'admins' | 'users' | 'reports'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'tickets' | 'detail' | 'techs' | 'admins' | 'users' | 'reports' | 'downloads'>('dashboard');
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [downloads, setDownloads] = useState<Download[]>([]);
 
   const [ticketViews, setTicketViews] = useState<any[]>([]);
   const [interactions, setInteractions] = useState<TicketInteraction[]>([]);
@@ -156,7 +162,7 @@ function HelpDeskApp() {
   const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
   const CONFIRMATION_WORD = 'EXCLUIR';
 
-  type ViewType = 'dashboard' | 'tickets' | 'detail' | 'techs' | 'admins' | 'users' | 'reports';
+  type ViewType = 'dashboard' | 'tickets' | 'detail' | 'techs' | 'admins' | 'users' | 'reports' | 'downloads';
 
   const navigateTo = async (newView: ViewType, ticketId: string | null = null) => {
     setView(newView);
@@ -187,6 +193,23 @@ function HelpDeskApp() {
   };
 
   useEffect(() => {
+    const fetchDownloads = async () => {
+      const { data, error } = await supabase
+        .from('downloads')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (!error && data) {
+        setDownloads(data);
+      }
+    };
+
+    if (isAuthReady) {
+      fetchDownloads();
+    }
+  }, [isAuthReady]);
+
+  useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
       if (event.state) {
         if (event.state.view) setView(event.state.view);
@@ -203,6 +226,8 @@ function HelpDeskApp() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
   const [isNewTicketModalOpen, setIsNewTicketModalOpen] = useState(false);
+  const [isNewDownloadModalOpen, setIsNewDownloadModalOpen] = useState(false);
+  const [editingDownload, setEditingDownload] = useState<Download | null>(null);
   const [isNewTechModalOpen, setIsNewTechModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<TicketStatus | 'ALL'>('ALL');
@@ -680,6 +705,73 @@ function HelpDeskApp() {
     } catch (error: any) {
       console.error("Error deactivating user:", error);
       toast.error("Erro ao desativar usuário: " + error.message);
+    }
+  };
+
+  const handleDeleteDownload = async (id: string) => {
+    if (userProfile?.role !== 'ADMIN') {
+      toast.error("Apenas administradores podem gerenciar downloads.");
+      return;
+    }
+
+    if (!window.confirm("Tem certeza que deseja excluir este download?")) return;
+
+    try {
+      const { error } = await supabase
+        .from('downloads')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      toast.success("Download excluído com sucesso.");
+      setDownloads(prev => prev.filter(d => d.id !== id));
+    } catch (error: any) {
+      console.error("Erro ao excluir download:", error);
+      toast.error("Erro ao excluir download: " + (error.message || "Erro desconhecido"));
+    }
+  };
+
+  const handleSaveDownload = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (userProfile?.role !== 'ADMIN') return;
+
+    const formData = new FormData(e.currentTarget);
+    const downloadData = {
+      name: formData.get('name') as string,
+      description: formData.get('description') as string,
+      url: formData.get('url') as string,
+      icon_url: formData.get('icon_url') as string || null,
+    };
+
+    try {
+      if (editingDownload) {
+        const { data, error } = await supabase
+          .from('downloads')
+          .update(downloadData)
+          .eq('id', editingDownload.id)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        toast.success("Download atualizado com sucesso.");
+        setDownloads(prev => prev.map(d => d.id === editingDownload.id ? data : d));
+      } else {
+        const { data, error } = await supabase
+          .from('downloads')
+          .insert([downloadData])
+          .select()
+          .single();
+        
+        if (error) throw error;
+        toast.success("Download adicionado com sucesso.");
+        setDownloads(prev => [data, ...prev]);
+      }
+      setIsNewDownloadModalOpen(false);
+      setEditingDownload(null);
+    } catch (error: any) {
+      console.error("Erro ao salvar download:", error);
+      toast.error("Erro ao salvar download: " + (error.message || "Erro desconhecido"));
     }
   };
 
@@ -1333,6 +1425,19 @@ function HelpDeskApp() {
                 </span>
               )}
             </button>
+            <button 
+              onClick={() => {
+                navigateTo('downloads');
+                setIsMobileMenuOpen(false);
+              }}
+              className={cn(
+                "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all text-left",
+                view === 'downloads' ? "bg-blue-50 text-blue-600" : "text-slate-500 hover:bg-slate-50"
+              )}
+            >
+              <DownloadCloud size={20} />
+              Downloads
+            </button>
             {(userProfile?.role === 'ADMIN' || userProfile?.role === 'TECH') && (
               <>
                 <button 
@@ -1437,6 +1542,7 @@ function HelpDeskApp() {
                  view === 'admins' ? 'Administradores do Sistema' :
                  view === 'users' ? 'Usuários do Sistema' :
                  view === 'reports' ? 'Relatórios e Estatísticas' : 
+                 view === 'downloads' ? 'Downloads Úteis' :
                  'Detalhes do Chamado'}
               </h2>
               <p className="text-xs md:text-sm text-slate-400 hidden sm:block">Prefeitura Municipal de Guaranésia</p>
@@ -1936,6 +2042,89 @@ function HelpDeskApp() {
                     </tbody>
                   </table>
                   </div>
+                </div>
+              </motion.div>
+            )}
+
+            {view === 'downloads' && (
+              <motion.div 
+                key="downloads"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="space-y-6"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900">Downloads Úteis</h3>
+                    <p className="text-xs text-slate-400">Ferramentas e utilitários recomendados</p>
+                  </div>
+                  {userProfile?.role === 'ADMIN' && (
+                    <button 
+                      onClick={() => {
+                        setEditingDownload(null);
+                        setIsNewDownloadModalOpen(true);
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
+                    >
+                      <Plus size={16} />
+                      Novo Download
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {downloads.map((download) => (
+                    <div key={download.id} className="bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm hover:shadow-md transition-all group">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-100 overflow-hidden">
+                          {download.icon_url ? (
+                            <img src={download.icon_url} alt="" className="w-10 h-10 object-contain" referrerPolicy="no-referrer" />
+                          ) : (
+                            <DownloadCloud size={28} className="text-slate-400" />
+                          )}
+                        </div>
+                        {userProfile?.role === 'ADMIN' && (
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button 
+                              onClick={() => {
+                                setEditingDownload(download);
+                                setIsNewDownloadModalOpen(true);
+                              }}
+                              className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                            >
+                              <Edit size={16} />
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteDownload(download.id)}
+                              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                            >
+                              <Trash size={16} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      <h4 className="font-bold text-slate-900 mb-1">{download.name}</h4>
+                      <p className="text-xs text-slate-500 mb-6 line-clamp-2 min-h-[2.5rem]">{download.description}</p>
+                      <a 
+                        href={download.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="w-full flex items-center justify-center gap-2 py-3 bg-slate-900 text-white text-xs font-bold rounded-2xl hover:bg-slate-800 transition-all"
+                      >
+                        <DownloadCloud size={16} />
+                        Baixar Agora
+                      </a>
+                    </div>
+                  ))}
+                  {downloads.length === 0 && (
+                    <div className="col-span-full py-20 text-center">
+                      <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <DownloadCloud size={32} className="text-slate-300" />
+                      </div>
+                      <p className="text-slate-400 text-sm">Nenhum download disponível no momento.</p>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             )}
@@ -2634,6 +2823,109 @@ function HelpDeskApp() {
                           Analisando com IA...
                         </>
                       ) : 'Criar Chamado'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* New Download Modal */}
+      <AnimatePresence>
+        {isNewDownloadModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsNewDownloadModalOpen(false)}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-lg bg-white rounded-[32px] shadow-2xl overflow-hidden"
+            >
+              <div className="p-8">
+                <div className="flex items-center justify-between mb-8">
+                  <div>
+                    <h3 className="text-2xl font-bold text-slate-900">
+                      {editingDownload ? 'Editar Download' : 'Novo Download'}
+                    </h3>
+                    <p className="text-sm text-slate-400">Preencha as informações do download</p>
+                  </div>
+                  <button 
+                    onClick={() => setIsNewDownloadModalOpen(false)}
+                    className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                  >
+                    <Plus size={24} className="rotate-45 text-slate-400" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleSaveDownload} className="space-y-5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Nome do Download</label>
+                    <input 
+                      name="name"
+                      required
+                      defaultValue={editingDownload?.name}
+                      type="text" 
+                      placeholder="Ex: RustDesk" 
+                      className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Descrição</label>
+                    <input 
+                      name="description"
+                      required
+                      defaultValue={editingDownload?.description}
+                      type="text" 
+                      placeholder="Ex: Software de acesso remoto gratuito" 
+                      className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">URL de Download</label>
+                    <input 
+                      name="url"
+                      required
+                      defaultValue={editingDownload?.url}
+                      type="url" 
+                      placeholder="https://..." 
+                      className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">URL do Ícone (Opcional)</label>
+                    <input 
+                      name="icon_url"
+                      defaultValue={editingDownload?.icon_url || ''}
+                      type="url" 
+                      placeholder="https://.../logo.png" 
+                      className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                    />
+                  </div>
+
+                  <div className="pt-4 flex gap-3">
+                    <button 
+                      type="button"
+                      onClick={() => setIsNewDownloadModalOpen(false)}
+                      className="flex-1 py-4 text-slate-500 font-bold hover:bg-slate-50 rounded-2xl transition-all"
+                    >
+                      Cancelar
+                    </button>
+                    <button 
+                      type="submit"
+                      className="flex-[2] py-4 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
+                    >
+                      {editingDownload ? 'Salvar Alterações' : 'Adicionar Download'}
                     </button>
                   </div>
                 </form>

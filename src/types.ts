@@ -56,6 +56,15 @@ export interface AuditLog {
   created_at: string;
 }
 
+export interface Download {
+  id: string;
+  name: string;
+  description: string;
+  url: string;
+  icon_url?: string;
+  created_at: string;
+}
+
 // AI Service Logic
 import { GoogleGenAI, Type } from "@google/genai";
 

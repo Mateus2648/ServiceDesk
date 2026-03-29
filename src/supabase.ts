@@ -66,4 +66,12 @@ export type Tables = {
     new_state: any;
     created_at: string;
   };
+  downloads: {
+    id: string;
+    name: string;
+    description: string;
+    url: string;
+    icon_url: string | null;
+    created_at: string;
+  };
 };
