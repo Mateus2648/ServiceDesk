@@ -1046,13 +1046,19 @@ function HelpDeskApp() {
     }
 
     try {
-      // Delete related interactions first
+      // Deletar visualizações primeiro (causa comum de erro de FK)
+      await supabase
+        .from('ticket_views')
+        .delete()
+        .eq('ticket_id', selectedTicketId);
+
+      // Deletar interações
       await supabase
         .from('interactions')
         .delete()
         .eq('ticket_id', selectedTicketId);
 
-      // Delete related audit logs (if any)
+      // Deletar logs de auditoria vinculados
       await supabase
         .from('audit_logs')
         .delete()
@@ -1063,16 +1069,19 @@ function HelpDeskApp() {
         .delete()
         .eq('id', selectedTicketId);
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erro detalhado do Supabase:", error);
+        throw error;
+      }
 
       toast.success('Chamado excluído com sucesso');
       setTickets(prev => prev.filter(t => t.id !== selectedTicketId));
       setIsDeleteModalOpen(false);
       setDeleteConfirmationText('');
       navigateTo('tickets');
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deleting ticket:", error);
-      toast.error('Erro ao excluir chamado');
+      toast.error('Erro ao excluir: ' + (error.message || 'Verifique as permissões no banco'));
     }
   };
 
