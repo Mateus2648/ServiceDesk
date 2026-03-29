@@ -450,7 +450,7 @@ function HelpDeskApp() {
         } else if (payload.eventType === 'UPDATE') {
           setTickets(prev => prev.map(t => t.id === payload.new.id ? { ...t, ...payload.new } : t));
         } else if (payload.eventType === 'DELETE') {
-          setTickets(prev => prev.filter(t => t.id === payload.old.id));
+          setTickets(prev => prev.filter(t => t.id !== payload.old.id));
         }
         fetchTickets();
       })
@@ -1046,21 +1046,24 @@ function HelpDeskApp() {
     }
 
     try {
+      // Delete related interactions first
+      await supabase
+        .from('interactions')
+        .delete()
+        .eq('ticket_id', selectedTicketId);
+
+      // Delete related audit logs (if any)
+      await supabase
+        .from('audit_logs')
+        .delete()
+        .eq('ticket_id', selectedTicketId);
+
       const { error } = await supabase
         .from('tickets')
         .delete()
         .eq('id', selectedTicketId);
 
       if (error) throw error;
-
-      // Audit Log
-      await supabase.from('audit_logs').insert([{
-        ticket_id: selectedTicketId,
-        user_id: currentUser.id,
-        action: 'TICKET_DELETED',
-        previous_state: tickets.find(t => t.id === selectedTicketId),
-        new_state: null
-      }]);
 
       toast.success('Chamado excluído com sucesso');
       setTickets(prev => prev.filter(t => t.id !== selectedTicketId));
