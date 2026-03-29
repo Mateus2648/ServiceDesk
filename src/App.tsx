@@ -769,8 +769,19 @@ function HelpDeskApp() {
         })
       });
 
-      const result = await response.json();
-      console.log("[DEBUG] Notification API response:", result);
+      const rawText = await response.text();
+      console.log("[DEBUG] Raw API response:", rawText);
+
+      let result;
+      try {
+        result = JSON.parse(rawText);
+      } catch (e) {
+        console.error("[DEBUG] Failed to parse JSON response:", rawText);
+        toast.error("Erro de comunicação com o servidor de e-mail.");
+        return;
+      }
+
+      console.log("[DEBUG] Notification API result:", result);
 
       if (!response.ok) {
         const errorMsg = result.error?.message || result.error || "Erro desconhecido";

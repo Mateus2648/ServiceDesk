@@ -1,16 +1,23 @@
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
+import { Resend } from "resend";
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  console.log("[DEBUG] RESEND_API_KEY defined:", !!process.env.RESEND_API_KEY);
+  console.log("[DEBUG] Servidor iniciando...");
+  console.log("[DEBUG] RESEND_API_KEY configurada:", !!process.env.RESEND_API_KEY);
 
   app.use(express.json());
 
-  // API: Logs de Auditoria (Simulado até o Firebase estar pronto)
+  // Rota de Teste (Health Check)
+  app.get("/api/health", (req, res) => {
+    res.json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+
+  // API: Logs de Auditoria
   app.post("/api/audit", (req, res) => {
     const log = req.body;
     console.log("[AUDIT LOG]:", log);
@@ -20,18 +27,17 @@ async function startServer() {
   // API: Notificações por E-mail
   app.post("/api/notify", async (req, res) => {
     const { to, subject, html } = req.body;
-    console.log("[NOTIFY] Request received for:", to);
+    console.log("[NOTIFY] Pedido recebido para:", to);
     
     if (!process.env.RESEND_API_KEY) {
-      console.warn("[NOTIFY]: RESEND_API_KEY não configurada. E-mail não enviado.");
-      return res.status(500).json({ error: "RESEND_API_KEY não configurada" });
+      console.error("[NOTIFY ERROR]: RESEND_API_KEY não configurada.");
+      return res.status(500).json({ error: "Configuração de e-mail ausente no servidor" });
     }
 
     try {
-      const { Resend } = await import("resend");
       const resend = new Resend(process.env.RESEND_API_KEY);
       
-      console.log("[NOTIFY] Sending email via Resend...");
+      console.log("[NOTIFY] Enviando via Resend...");
       const { data, error } = await resend.emails.send({
         from: "CPD Guaranésia <onboarding@resend.dev>",
         to,
@@ -48,7 +54,7 @@ async function startServer() {
       res.json({ status: "sent", data });
     } catch (err: any) {
       console.error("[NOTIFY EXCEPTION]:", err);
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: err.message || "Erro interno no servidor de e-mail" });
     }
   });
 
