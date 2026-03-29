@@ -702,26 +702,17 @@ function HelpDeskApp() {
   };
 
   const sendNotification = async (ticketId: string, subject: string, message: string) => {
-    console.log("[DEBUG] sendNotification called for ticket:", ticketId);
     try {
-      // Tenta encontrar no estado local primeiro
       let ticket = tickets.find(t => t.id === ticketId);
       
-      // Se não encontrar no estado (pode estar desatualizado), busca no Supabase
       if (!ticket) {
-        console.log("[DEBUG] Ticket not in state, fetching from Supabase...");
         const { data, error } = await supabase.from('tickets').select('*').eq('id', ticketId).single();
-        if (error || !data) {
-          console.error("[DEBUG] Could not fetch ticket for notification:", error);
-          return;
-        }
+        if (error || !data) return;
         ticket = data as Ticket;
       }
 
-      // Busca perfis se allProfiles estiver vazio
       let currentProfiles = allProfiles;
       if (currentProfiles.length === 0) {
-        console.log("[DEBUG] allProfiles is empty, fetching from Supabase...");
         const { data, error } = await supabase.from('profiles').select('*');
         if (!error && data) {
           currentProfiles = data as User[];
@@ -732,19 +723,25 @@ function HelpDeskApp() {
       const creator = currentProfiles.find(p => p.id === ticket.created_by);
       const technician = currentProfiles.find(p => p.id === ticket.assigned_to);
 
-      console.log("[DEBUG] Creator:", creator?.email, "Technician:", technician?.email);
-
       const recipients = [];
       if (creator?.email) recipients.push(creator.email);
       if (technician?.email) recipients.push(technician.email);
 
       const uniqueRecipients = [...new Set(recipients)];
-      if (uniqueRecipients.length === 0) {
-        console.warn("[DEBUG] No recipients found for notification. Check if users have emails in their profiles.");
-        return;
-      }
+      if (uniqueRecipients.length === 0) return;
 
-      console.log("[DEBUG] Sending notification to:", uniqueRecipients);
+      const statusMap: Record<string, string> = {
+        'OPEN': 'Aberto',
+        'IN_PROGRESS': 'Em Atendimento',
+        'WAITING': 'Aguardando',
+        'FINISHED': 'Concluído',
+        'CANCELED': 'Cancelado'
+      };
+
+      const statusLabel = statusMap[ticket.status] || ticket.status;
+      const statusColor = ticket.status === 'FINISHED' ? '#10b981' : 
+                          ticket.status === 'IN_PROGRESS' ? '#2563eb' : 
+                          ticket.status === 'WAITING' ? '#f59e0b' : '#64748b';
 
       const response = await fetch('/api/notify', {
         method: 'POST',
@@ -753,45 +750,58 @@ function HelpDeskApp() {
           to: uniqueRecipients,
           subject: `[CPD Guaranésia] ${subject} - Chamado #${ticketId.slice(0, 8)}`,
           html: `
-            <div style="font-family: sans-serif; padding: 20px; color: #333; line-height: 1.6;">
-              <h2 style="color: #2563eb; margin-bottom: 20px;">Atualização no Chamado</h2>
-              <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
-                <p style="margin: 0;"><strong>Chamado:</strong> ${ticket.title}</p>
-                <p style="margin: 5px 0 0 0;"><strong>Status Atual:</strong> ${ticket.status}</p>
+            <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+              <div style="background-color: #2563eb; padding: 24px; text-align: center;">
+                <h1 style="color: #ffffff; margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px;">Service Desk CPD Guaranésia</h1>
               </div>
-              <p style="font-size: 16px;">${message}</p>
-              <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666;">
-                <p>Este é um e-mail automático do sistema de Service Desk CPD Guaranésia.</p>
-                <p>Por favor, não responda a este e-mail.</p>
+              
+              <div style="padding: 32px; color: #1f2937;">
+                <h2 style="margin-top: 0; color: #111827; font-size: 18px; font-weight: 600;">Olá,</h2>
+                <p style="font-size: 16px; color: #4b5563; margin-bottom: 24px;">Houve uma nova movimentação no seu chamado. Confira os detalhes abaixo:</p>
+                
+                <div style="background-color: #f9fafb; border-left: 4px solid #2563eb; padding: 20px; border-radius: 4px; margin-bottom: 24px;">
+                  <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Chamado</p>
+                  <p style="margin: 0 0 16px 0; font-size: 16px; font-weight: 600; color: #111827;">${ticket.title}</p>
+                  
+                  <div style="display: flex; align-items: center;">
+                    <div style="margin-right: 20px;">
+                      <p style="margin: 0 0 4px 0; font-size: 14px; color: #6b7280; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Status</p>
+                      <span style="display: inline-block; padding: 4px 12px; background-color: ${statusColor}; color: #ffffff; border-radius: 9999px; font-size: 12px; font-weight: 600;">${statusLabel}</span>
+                    </div>
+                    <div>
+                      <p style="margin: 0 0 4px 0; font-size: 14px; color: #6b7280; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">ID</p>
+                      <p style="margin: 0; font-size: 14px; font-family: monospace; color: #374151;">#${ticketId.slice(0, 8)}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="background-color: #eff6ff; padding: 20px; border-radius: 8px; border: 1px solid #dbeafe;">
+                  <p style="margin: 0; font-size: 15px; color: #1e40af; line-height: 1.6;">${message}</p>
+                </div>
+
+                <div style="margin-top: 32px; text-align: center;">
+                  <a href="${window.location.origin}" style="display: inline-block; padding: 12px 24px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px;">Acessar Painel do Chamado</a>
+                </div>
+              </div>
+
+              <div style="background-color: #f3f4f6; padding: 24px; text-align: center; border-top: 1px solid #e5e7eb;">
+                <p style="margin: 0; font-size: 12px; color: #6b7280;">Este é um e-mail automático do sistema de Service Desk CPD Guaranésia.</p>
+                <p style="margin: 4px 0 0 0; font-size: 12px; color: #6b7280;">Por favor, não responda a este e-mail.</p>
+                <div style="margin-top: 16px; font-size: 11px; color: #9ca3af;">
+                  &copy; ${new Date().getFullYear()} Prefeitura Municipal de Guaranésia - CPD
+                </div>
               </div>
             </div>
           `
         })
       });
 
-      const rawText = await response.text();
-      console.log("[DEBUG] Raw API response:", rawText);
-
-      let result;
-      try {
-        result = JSON.parse(rawText);
-      } catch (e) {
-        console.error("[DEBUG] Failed to parse JSON response:", rawText);
-        toast.error("Erro de comunicação com o servidor de e-mail.");
-        return;
-      }
-
-      console.log("[DEBUG] Notification API result:", result);
-
       if (!response.ok) {
-        const errorMsg = result.error?.message || result.error || "Erro desconhecido";
-        console.error("[DEBUG] API Error:", errorMsg);
-        toast.error("Erro na notificação: " + errorMsg);
-      } else {
-        console.log("[DEBUG] Notification sent successfully!");
+        const result = await response.json();
+        console.error("Erro na notificação:", result.error);
       }
     } catch (error) {
-      console.error("[DEBUG] Exception in sendNotification:", error);
+      console.error("Erro ao enviar notificação:", error);
     }
   };
 
