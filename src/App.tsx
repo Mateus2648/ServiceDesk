@@ -1064,14 +1064,18 @@ function HelpDeskApp() {
         .delete()
         .eq('ticket_id', selectedTicketId);
 
-      const { error } = await supabase
+      const { error, count } = await supabase
         .from('tickets')
-        .delete()
+        .delete({ count: 'exact' })
         .eq('id', selectedTicketId);
 
       if (error) {
         console.error("Erro detalhado do Supabase:", error);
         throw error;
+      }
+
+      if (count === 0) {
+        throw new Error("O banco de dados não permitiu a exclusão (RLS). Verifique as políticas de segurança no painel do Supabase.");
       }
 
       toast.success('Chamado excluído com sucesso');
