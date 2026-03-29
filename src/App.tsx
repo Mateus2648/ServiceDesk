@@ -152,6 +152,9 @@ function HelpDeskApp() {
   const [ticketViews, setTicketViews] = useState<any[]>([]);
   const [interactions, setInteractions] = useState<TicketInteraction[]>([]);
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
+  const CONFIRMATION_WORD = 'EXCLUIR';
 
   type ViewType = 'dashboard' | 'tickets' | 'detail' | 'techs' | 'admins' | 'users' | 'reports';
 
@@ -1031,6 +1034,42 @@ function HelpDeskApp() {
       toast.error('Erro ao atribuir técnico');
       // Revert on error
       fetchTickets();
+    }
+  };
+
+  const handleDeleteTicket = async () => {
+    if (!selectedTicketId || !currentUser || !userProfile || userProfile.role !== 'ADMIN') return;
+    
+    if (deleteConfirmationText !== CONFIRMATION_WORD) {
+      toast.error(`Digite "${CONFIRMATION_WORD}" para confirmar.`);
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('tickets')
+        .delete()
+        .eq('id', selectedTicketId);
+
+      if (error) throw error;
+
+      // Audit Log
+      await supabase.from('audit_logs').insert([{
+        ticket_id: selectedTicketId,
+        user_id: currentUser.id,
+        action: 'TICKET_DELETED',
+        previous_state: tickets.find(t => t.id === selectedTicketId),
+        new_state: null
+      }]);
+
+      toast.success('Chamado excluído com sucesso');
+      setTickets(prev => prev.filter(t => t.id !== selectedTicketId));
+      setIsDeleteModalOpen(false);
+      setDeleteConfirmationText('');
+      navigateTo('tickets');
+    } catch (error) {
+      console.error("Error deleting ticket:", error);
+      toast.error('Erro ao excluir chamado');
     }
   };
 
@@ -2121,13 +2160,25 @@ function HelpDeskApp() {
               >
                 <div className="lg:col-span-2 space-y-6">
                   <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
-                    <button 
-                      onClick={() => navigateTo('tickets')}
-                      className="flex items-center gap-2 text-slate-400 hover:text-slate-600 text-sm font-medium mb-6 transition-colors"
-                    >
-                      <ArrowLeft size={16} />
-                      Voltar para a lista
-                    </button>
+                    <div className="flex items-center justify-between mb-6">
+                      <button 
+                        onClick={() => navigateTo('tickets')}
+                        className="flex items-center gap-2 text-slate-400 hover:text-slate-600 text-sm font-medium transition-colors"
+                      >
+                        <ArrowLeft size={16} />
+                        Voltar para a lista
+                      </button>
+
+                      {userProfile?.role === 'ADMIN' && (
+                        <button 
+                          onClick={() => setIsDeleteModalOpen(true)}
+                          className="flex items-center gap-2 text-red-500 hover:text-red-600 text-sm font-bold transition-colors px-4 py-2 rounded-xl hover:bg-red-50"
+                        >
+                          <Trash2 size={16} />
+                          Excluir Chamado
+                        </button>
+                      )}
+                    </div>
 
                     <div className="flex items-start justify-between mb-6">
                       <div>
@@ -2179,32 +2230,69 @@ function HelpDeskApp() {
                             );
                           }
 
+                          const senderProfile = allProfiles.find(p => p.id === interaction.user_id);
+                          const senderRole = senderProfile?.role || 'USER';
+                          const isMe = interaction.user_id === currentUser.id;
+
+                          const getRoleStyles = (role: string) => {
+                            switch (role) {
+                              case 'ADMIN':
+                                return {
+                                  bubble: isMe ? "bg-purple-600 text-white rounded-tr-none shadow-sm" : "bg-purple-50 text-purple-900 rounded-tl-none border border-purple-100",
+                                  badge: isMe ? "bg-purple-500/30 text-purple-100" : "bg-purple-100 text-purple-600",
+                                  text: isMe ? "text-purple-100" : "text-purple-500",
+                                  label: "Administrador"
+                                };
+                              case 'TECH':
+                                return {
+                                  bubble: isMe ? "bg-blue-600 text-white rounded-tr-none shadow-sm" : "bg-blue-50 text-blue-900 rounded-tl-none border border-blue-100",
+                                  badge: isMe ? "bg-blue-500/30 text-blue-100" : "bg-blue-100 text-blue-600",
+                                  text: isMe ? "text-blue-100" : "text-blue-500",
+                                  label: "Técnico"
+                                };
+                              default:
+                                return {
+                                  bubble: isMe ? "bg-slate-700 text-white rounded-tr-none shadow-sm" : "bg-slate-100 text-slate-700 rounded-tl-none border border-slate-200",
+                                  badge: isMe ? "bg-slate-600/30 text-slate-200" : "bg-slate-200 text-slate-600",
+                                  text: isMe ? "text-slate-300" : "text-slate-400",
+                                  label: "Usuário"
+                                };
+                            }
+                          };
+
+                          const styles = getRoleStyles(senderRole);
+
                           return (
                             <div key={interaction.id} className={cn(
                               "flex gap-4",
-                              interaction.user_id === currentUser.id ? "flex-row-reverse" : ""
+                              isMe ? "flex-row-reverse" : ""
                             )}>
-                              <div className="w-8 h-8 rounded-full bg-slate-100 flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-slate-600">
-                                {interaction.user_id === currentUser.id ? 'EU' : 'CPD'}
+                              <div className={cn(
+                                "w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center text-[10px] font-bold shadow-sm",
+                                senderRole === 'ADMIN' ? "bg-purple-100 text-purple-600" : 
+                                senderRole === 'TECH' ? "bg-blue-100 text-blue-600" : "bg-slate-100 text-slate-600"
+                              )}>
+                                {senderProfile?.full_name[0] || '?'}
                               </div>
                               <div className={cn(
-                                "max-w-[80%] p-4 rounded-2xl text-sm",
-                                interaction.user_id === currentUser.id 
-                                  ? "bg-blue-600 text-white rounded-tr-none" 
-                                  : "bg-slate-100 text-slate-700 rounded-tl-none"
+                                "max-w-[80%] p-4 rounded-2xl text-sm transition-all",
+                                styles.bubble
                               )}>
-                                <p>{displayContent}</p>
-                                <div className="flex justify-between items-center mt-2 gap-2">
-                                  <p className={cn(
-                                    "text-[9px] font-bold uppercase tracking-wider",
-                                    interaction.user_id === currentUser.id ? "text-blue-200" : "text-slate-400"
-                                  )}>
-                                    {allProfiles.find(p => p.id === interaction.user_id)?.full_name || 'Usuário'}
-                                  </p>
-                                  <p className={cn(
-                                    "text-[10px]",
-                                    interaction.user_id === currentUser.id ? "text-blue-200" : "text-slate-400"
-                                  )}>{new Date(interaction.created_at).toLocaleString('pt-BR')}</p>
+                                <p className="leading-relaxed">{displayContent}</p>
+                                <div className="flex flex-col mt-3 pt-2 border-t border-black/5">
+                                  <div className="flex justify-between items-center gap-4">
+                                    <div className="flex flex-col">
+                                      <span className={cn("text-[10px] font-bold uppercase tracking-wider", isMe ? "text-white" : "text-slate-900")}>
+                                        {senderProfile?.full_name || 'Usuário'}
+                                      </span>
+                                      <span className={cn("text-[9px] font-medium uppercase tracking-widest mt-0.5", styles.text)}>
+                                        {styles.label}
+                                      </span>
+                                    </div>
+                                    <span className={cn("text-[10px] font-medium opacity-70", isMe ? "text-white" : "text-slate-500")}>
+                                      {new Date(interaction.created_at).toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -2518,6 +2606,67 @@ function HelpDeskApp() {
                     </button>
                   </div>
                 </form>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Ticket Confirmation Modal */}
+      <AnimatePresence>
+        {isDeleteModalOpen && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsDeleteModalOpen(false)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-md bg-white rounded-[32px] shadow-2xl overflow-hidden"
+            >
+              <div className="p-8 text-center">
+                <div className="w-20 h-20 bg-red-50 text-red-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner">
+                  <AlertTriangle size={40} />
+                </div>
+                
+                <h3 className="text-2xl font-bold text-slate-900 mb-2">Excluir Chamado?</h3>
+                <p className="text-slate-500 text-sm mb-8 leading-relaxed">
+                  Esta ação é irreversível. Para confirmar a exclusão definitiva deste chamado, digite <span className="font-black text-red-600 select-none">"{CONFIRMATION_WORD}"</span> abaixo.
+                </p>
+
+                <div className="space-y-6">
+                  <input 
+                    type="text"
+                    value={deleteConfirmationText}
+                    onChange={(e) => setDeleteConfirmationText(e.target.value.toUpperCase())}
+                    placeholder={`Digite ${CONFIRMATION_WORD} aqui`}
+                    className="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl text-center text-lg font-black tracking-widest focus:outline-none focus:border-red-500/30 focus:ring-4 focus:ring-red-500/5 transition-all placeholder:text-slate-300 placeholder:font-normal placeholder:tracking-normal"
+                  />
+
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={() => {
+                        setIsDeleteModalOpen(false);
+                        setDeleteConfirmationText('');
+                      }}
+                      className="flex-1 py-4 text-slate-500 font-bold hover:bg-slate-50 rounded-2xl transition-all"
+                    >
+                      Cancelar
+                    </button>
+                    <button 
+                      onClick={handleDeleteTicket}
+                      disabled={deleteConfirmationText !== CONFIRMATION_WORD}
+                      className="flex-[2] py-4 bg-red-600 text-white font-bold rounded-2xl hover:bg-red-700 transition-all shadow-lg shadow-red-200 disabled:opacity-30 disabled:shadow-none disabled:grayscale"
+                    >
+                      Confirmar Exclusão
+                    </button>
+                  </div>
+                </div>
               </div>
             </motion.div>
           </div>
