@@ -1161,7 +1161,7 @@ function HelpDeskApp() {
         >
           <div className="w-24 h-24 flex items-center justify-center mx-auto mb-6">
             <img 
-              src="https://guaranesia.mg.gov.br/wp-content/uploads/2021/03/brasao.png" 
+              src="https://www.prefguaranesia.mg.gov.br/adm2017/wp-content/uploads/2021/08/VETOR-Corrigido-min.png" 
               alt="Brasão Guaranésia" 
               className="w-full h-full object-contain"
               referrerPolicy="no-referrer"
@@ -1199,7 +1199,7 @@ function HelpDeskApp() {
         <div className="bg-white p-10 rounded-[40px] border border-slate-200 shadow-2xl max-w-md w-full text-center">
           <div className="w-24 h-24 flex items-center justify-center mx-auto mb-8">
             <img 
-              src="https://guaranesia.mg.gov.br/wp-content/uploads/2021/03/brasao.png" 
+              src="https://www.prefguaranesia.mg.gov.br/adm2017/wp-content/uploads/2021/08/VETOR-Corrigido-min.png" 
               alt="Brasão Guaranésia" 
               className="w-full h-full object-contain"
               referrerPolicy="no-referrer"
@@ -1273,7 +1273,7 @@ function HelpDeskApp() {
           <div className="flex items-center gap-3 mb-8">
             <div className="w-12 h-12 flex items-center justify-center">
               <img 
-                src="https://guaranesia.mg.gov.br/wp-content/uploads/2021/03/brasao.png" 
+                src="https://www.prefguaranesia.mg.gov.br/adm2017/wp-content/uploads/2021/08/VETOR-Corrigido-min.png" 
                 alt="Brasão Guaranésia" 
                 className="w-full h-full object-contain"
                 referrerPolicy="no-referrer"
