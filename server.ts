@@ -1,21 +1,13 @@
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  console.log("[DEBUG] Servidor iniciando...");
-  console.log("[DEBUG] RESEND_API_KEY configurada:", !!process.env.RESEND_API_KEY);
-
   app.use(express.json());
-
-  // Rota de Teste (Health Check)
-  app.get("/api/health", (req, res) => {
-    res.json({ status: "ok", timestamp: new Date().toISOString() });
-  });
 
   // API: Logs de Auditoria
   app.post("/api/audit", (req, res) => {
@@ -24,37 +16,40 @@ async function startServer() {
     res.json({ status: "logged" });
   });
 
-  // API: Notificações por E-mail
+  // API: Notificações por E-mail (SMTP)
   app.post("/api/notify", async (req, res) => {
     const { to, subject, html } = req.body;
-    console.log("[NOTIFY] Pedido recebido para:", to);
     
-    if (!process.env.RESEND_API_KEY) {
-      console.error("[NOTIFY ERROR]: RESEND_API_KEY não configurada.");
-      return res.status(500).json({ error: "Configuração de e-mail ausente no servidor" });
+    const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM } = process.env;
+
+    if (!SMTP_HOST || !SMTP_PORT || !SMTP_USER || !SMTP_PASS) {
+      console.error("[NOTIFY ERROR]: Configuração SMTP incompleta.");
+      return res.status(500).json({ error: "Configuração de e-mail SMTP incompleta no servidor" });
     }
 
     try {
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      
-      console.log("[NOTIFY] Enviando via Resend...");
-      const { data, error } = await resend.emails.send({
-        from: "CPD Guaranésia <onboarding@resend.dev>",
-        to,
+      const transporter = nodemailer.createTransport({
+        host: SMTP_HOST,
+        port: parseInt(SMTP_PORT),
+        secure: parseInt(SMTP_PORT) === 465, // true para 465, false para outros
+        auth: {
+          user: SMTP_USER,
+          pass: SMTP_PASS,
+        },
+      });
+
+      const info = await transporter.sendMail({
+        from: SMTP_FROM || SMTP_USER,
+        to: Array.isArray(to) ? to.join(", ") : to,
         subject,
         html,
       });
 
-      if (error) {
-        console.error("[NOTIFY ERROR]:", JSON.stringify(error, null, 2));
-        return res.status(400).json({ error });
-      }
-
-      console.log("[NOTIFY SUCCESS]:", data);
-      res.json({ status: "sent", data });
+      console.log("[NOTIFY SUCCESS]:", info.messageId);
+      res.json({ status: "sent", messageId: info.messageId });
     } catch (err: any) {
       console.error("[NOTIFY EXCEPTION]:", err);
-      res.status(500).json({ error: err.message || "Erro interno no servidor de e-mail" });
+      res.status(500).json({ error: err.message || "Erro interno no servidor de e-mail SMTP" });
     }
   });
 

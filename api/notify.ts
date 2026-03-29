@@ -1,4 +1,4 @@
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
 export default async function handler(req: any, res: any) {
   if (req.method !== "POST") {
@@ -7,54 +7,33 @@ export default async function handler(req: any, res: any) {
 
   const { to, subject, html } = req.body;
 
-  if (!process.env.RESEND_API_KEY) {
-    return res.status(500).json({ error: "RESEND_API_KEY não configurada no Vercel" });
+  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM } = process.env;
+
+  if (!SMTP_HOST || !SMTP_PORT || !SMTP_USER || !SMTP_PASS) {
+    return res.status(500).json({ error: "Configuração SMTP incompleta no Vercel" });
   }
 
   try {
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    
-    const recipients = Array.isArray(to) ? to : [to];
-    const results = [];
+    const transporter = nodemailer.createTransport({
+      host: SMTP_HOST,
+      port: parseInt(SMTP_PORT),
+      secure: parseInt(SMTP_PORT) === 465, // true para 465, false para outros
+      auth: {
+        user: SMTP_USER,
+        pass: SMTP_PASS,
+      },
+    });
 
-    // Envia individualmente para garantir que o Resend processe cada um
-    // e para evitar falhas em massa no plano gratuito
-    for (const recipient of recipients) {
-      try {
-        const { data, error } = await resend.emails.send({
-          from: "CPD Guaranésia <onboarding@resend.dev>",
-          to: recipient,
-          subject,
-          html,
-        });
-        
-        results.push({ 
-          recipient, 
-          success: !error, 
-          data: data || null, 
-          error: error || null 
-        });
-      } catch (sendErr: any) {
-        results.push({ 
-          recipient, 
-          success: false, 
-          error: sendErr.message || "Erro desconhecido no envio" 
-        });
-      }
-    }
+    const info = await transporter.sendMail({
+      from: SMTP_FROM || SMTP_USER,
+      to: Array.isArray(to) ? to.join(", ") : to,
+      subject,
+      html,
+    });
 
-    const hasSuccess = results.some(r => r.success);
-    
-    if (!hasSuccess) {
-      return res.status(400).json({ 
-        error: "Nenhum e-mail pôde ser enviado. Verifique se os destinatários são autorizados no seu plano do Resend.",
-        details: results 
-      });
-    }
-
-    return res.status(200).json({ status: "processed", results });
+    return res.status(200).json({ status: "sent", messageId: info.messageId });
   } catch (err: any) {
-    console.error("[Vercel API Exception]:", err);
-    return res.status(500).json({ error: "Erro interno ao processar notificações" });
+    console.error("[Vercel SMTP Exception]:", err);
+    return res.status(500).json({ error: err.message || "Erro interno ao processar notificações SMTP" });
   }
 }
