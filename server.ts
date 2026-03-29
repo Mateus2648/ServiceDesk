@@ -15,6 +15,38 @@ async function startServer() {
     res.json({ status: "logged" });
   });
 
+  // API: Notificações por E-mail
+  app.post("/api/notify", async (req, res) => {
+    const { to, subject, html } = req.body;
+    
+    if (!process.env.RESEND_API_KEY) {
+      console.warn("[NOTIFY]: RESEND_API_KEY não configurada. E-mail não enviado.");
+      return res.status(500).json({ error: "RESEND_API_KEY não configurada" });
+    }
+
+    try {
+      const { Resend } = await import("resend");
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      
+      const { data, error } = await resend.emails.send({
+        from: "CPD Guaranésia <onboarding@resend.dev>",
+        to,
+        subject,
+        html,
+      });
+
+      if (error) {
+        console.error("[NOTIFY ERROR]:", error);
+        return res.status(400).json({ error });
+      }
+
+      res.json({ status: "sent", data });
+    } catch (err: any) {
+      console.error("[NOTIFY EXCEPTION]:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // Vite middleware para desenvolvimento
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({

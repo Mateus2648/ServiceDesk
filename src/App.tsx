@@ -701,6 +701,48 @@ function HelpDeskApp() {
     }
   };
 
+  const sendNotification = async (ticketId: string, subject: string, message: string) => {
+    try {
+      const ticket = tickets.find(t => t.id === ticketId);
+      if (!ticket) return;
+
+      const creator = allProfiles.find(p => p.id === ticket.created_by);
+      const technician = allProfiles.find(p => p.id === ticket.assigned_to);
+
+      const recipients = [];
+      if (creator?.email) recipients.push(creator.email);
+      if (technician?.email) recipients.push(technician.email);
+
+      const uniqueRecipients = [...new Set(recipients)];
+      if (uniqueRecipients.length === 0) return;
+
+      await fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: uniqueRecipients,
+          subject: `[CPD Guaranésia] ${subject} - Chamado #${ticketId.slice(0, 8)}`,
+          html: `
+            <div style="font-family: sans-serif; padding: 20px; color: #333; line-height: 1.6;">
+              <h2 style="color: #2563eb; margin-bottom: 20px;">Atualização no Chamado</h2>
+              <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
+                <p style="margin: 0;"><strong>Chamado:</strong> ${ticket.title}</p>
+                <p style="margin: 5px 0 0 0;"><strong>Status Atual:</strong> ${ticket.status}</p>
+              </div>
+              <p style="font-size: 16px;">${message}</p>
+              <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666;">
+                <p>Este é um e-mail automático do sistema de Service Desk CPD Guaranésia.</p>
+                <p>Por favor, não responda a este e-mail.</p>
+              </div>
+            </div>
+          `
+        })
+      });
+    } catch (error) {
+      console.error("Error sending notification:", error);
+    }
+  };
+
   const handleCreateTicket = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!currentUser || !userProfile) return;
@@ -766,6 +808,7 @@ function HelpDeskApp() {
         updated_at: new Date().toISOString()
       }).eq('id', selectedTicketId);
       
+      sendNotification(selectedTicketId, 'Nova Mensagem', `Uma nova mensagem foi adicionada ao chamado: <br/><br/><i>"${content}"</i>`);
       toast.success('Mensagem enviada com sucesso');
     } catch (error: any) {
       console.error("Error sending message:", error);
@@ -812,6 +855,8 @@ function HelpDeskApp() {
         previous_state: previousState,
         new_state: { ...previousState, status: newStatus, updated_at: updatedAt }
       }]);
+      
+      sendNotification(selectedTicketId, 'Status Atualizado', `O status do chamado foi alterado para: <strong>${newStatus}</strong>`);
       toast.success('Status do chamado atualizado com sucesso');
     } catch (error) {
       console.error("Error updating status:", error);
@@ -853,6 +898,9 @@ function HelpDeskApp() {
         previous_state: previousState,
         new_state: { ...previousState, assigned_to: techId, updated_at: updatedAt }
       }]);
+
+      const tech = allProfiles.find(p => p.id === techId);
+      sendNotification(selectedTicketId, 'Técnico Atribuído', `O chamado foi atribuído ao técnico: <strong>${tech?.full_name || 'Nenhum'}</strong>`);
       toast.success('Técnico atribuído com sucesso');
     } catch (error) {
       console.error("Error updating assignment:", error);
