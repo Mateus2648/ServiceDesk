@@ -1159,8 +1159,13 @@ function HelpDeskApp() {
           animate={{ opacity: 1, scale: 1 }}
           className="max-w-md w-full bg-white p-12 rounded-[40px] border border-slate-200 shadow-2xl text-center space-y-8"
         >
-          <div className="w-24 h-24 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
-            <ShieldCheck size={48} />
+          <div className="w-24 h-24 flex items-center justify-center mx-auto mb-6">
+            <img 
+              src="https://guaranesia.mg.gov.br/wp-content/uploads/2021/03/brasao.png" 
+              alt="Brasão Guaranésia" 
+              className="w-full h-full object-contain"
+              referrerPolicy="no-referrer"
+            />
           </div>
           <div className="space-y-4">
             <h1 className="text-3xl font-black text-slate-900 tracking-tight">Acesso Pendente</h1>
@@ -1192,8 +1197,13 @@ function HelpDeskApp() {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
         <div className="bg-white p-10 rounded-[40px] border border-slate-200 shadow-2xl max-w-md w-full text-center">
-          <div className="w-20 h-20 bg-blue-600 rounded-[28px] flex items-center justify-center text-white shadow-xl shadow-blue-200 mx-auto mb-8">
-            <ShieldCheck size={40} />
+          <div className="w-24 h-24 flex items-center justify-center mx-auto mb-8">
+            <img 
+              src="https://guaranesia.mg.gov.br/wp-content/uploads/2021/03/brasao.png" 
+              alt="Brasão Guaranésia" 
+              className="w-full h-full object-contain"
+              referrerPolicy="no-referrer"
+            />
           </div>
           <h1 className="text-3xl font-black text-slate-900 mb-2">Service Desk</h1>
           <p className="text-slate-400 font-medium mb-10 uppercase tracking-widest text-xs">Prefeitura de Guaranésia</p>
@@ -1261,8 +1271,13 @@ function HelpDeskApp() {
       )}>
         <div className="p-6">
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
-              <ShieldCheck size={24} />
+            <div className="w-12 h-12 flex items-center justify-center">
+              <img 
+                src="https://guaranesia.mg.gov.br/wp-content/uploads/2021/03/brasao.png" 
+                alt="Brasão Guaranésia" 
+                className="w-full h-full object-contain"
+                referrerPolicy="no-referrer"
+              />
             </div>
             <div>
               <h1 className="font-bold text-slate-900 leading-tight">CPD Guaranésia</h1>
