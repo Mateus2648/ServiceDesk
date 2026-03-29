@@ -1846,7 +1846,6 @@ function HelpDeskApp() {
                         <tr className="bg-slate-50 border-b border-slate-200">
                           <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Administrador</th>
                         <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Secretaria</th>
-                        <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Email</th>
                         <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Ações</th>
                       </tr>
                     </thead>
@@ -1860,6 +1859,7 @@ function HelpDeskApp() {
                               </div>
                               <div>
                                 <p className="text-sm font-bold text-slate-900">{admin.full_name}</p>
+                                <p className="text-xs text-slate-400">{admin.email}</p>
                               </div>
                             </div>
                           </td>
