@@ -1,3 +1,5 @@
+import { Resend } from "resend";
+
 export default async function handler(req: any, res: any) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -10,26 +12,34 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    // Importação dinâmica para evitar problemas de módulo no Vercel
-    const { Resend } = await import("resend");
     const resend = new Resend(process.env.RESEND_API_KEY);
     
     const recipients = Array.isArray(to) ? to : [to];
     const results = [];
 
-    // Envia individualmente para evitar bloqueios do plano gratuito do Resend
-    // e para facilitar a identificação de qual e-mail falhou
+    // Envia individualmente para garantir que o Resend processe cada um
+    // e para evitar falhas em massa no plano gratuito
     for (const recipient of recipients) {
       try {
-        const result = await resend.emails.send({
+        const { data, error } = await resend.emails.send({
           from: "CPD Guaranésia <onboarding@resend.dev>",
           to: recipient,
           subject,
           html,
         });
-        results.push({ recipient, success: !result.error, data: result.data, error: result.error });
+        
+        results.push({ 
+          recipient, 
+          success: !error, 
+          data: data || null, 
+          error: error || null 
+        });
       } catch (sendErr: any) {
-        results.push({ recipient, success: false, error: sendErr.message });
+        results.push({ 
+          recipient, 
+          success: false, 
+          error: sendErr.message || "Erro desconhecido no envio" 
+        });
       }
     }
 
@@ -37,7 +47,7 @@ export default async function handler(req: any, res: any) {
     
     if (!hasSuccess) {
       return res.status(400).json({ 
-        error: "Falha ao enviar e-mails. Verifique se os destinatários estão autorizados no Resend.",
+        error: "Nenhum e-mail pôde ser enviado. Verifique se os destinatários são autorizados no seu plano do Resend.",
         details: results 
       });
     }
@@ -45,6 +55,6 @@ export default async function handler(req: any, res: any) {
     return res.status(200).json({ status: "processed", results });
   } catch (err: any) {
     console.error("[Vercel API Exception]:", err);
-    return res.status(500).json({ error: err.message || "Erro interno no servidor de e-mail" });
+    return res.status(500).json({ error: "Erro interno ao processar notificações" });
   }
 }
