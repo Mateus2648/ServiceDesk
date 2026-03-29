@@ -918,7 +918,25 @@ function HelpDeskApp() {
         new_state: { ...previousState, status: newStatus, updated_at: updatedAt }
       }]);
       
-      sendNotification(selectedTicketId, 'Status Atualizado', `O status do chamado foi alterado para: <strong>${newStatus}</strong>`);
+      const statusMap: Record<string, string> = {
+        'OPEN': 'Aberto',
+        'IN_PROGRESS': 'Em Atendimento',
+        'WAITING': 'Aguardando',
+        'FINISHED': 'Concluído',
+        'CANCELED': 'Cancelado'
+      };
+      
+      const translatedStatus = statusMap[newStatus] || newStatus;
+      
+      // Interaction Log (System Message)
+      await supabase.from('interactions').insert([{
+        ticket_id: selectedTicketId,
+        user_id: currentUser.id,
+        content: `SYSTEM_LOG:O status do chamado foi alterado para: ${translatedStatus}`,
+        is_internal: false
+      }]);
+
+      sendNotification(selectedTicketId, 'Status Atualizado', `O status do chamado foi alterado para: <strong>${translatedStatus}</strong>`);
       toast.success('Status do chamado atualizado com sucesso');
     } catch (error) {
       console.error("Error updating status:", error);
@@ -951,6 +969,15 @@ function HelpDeskApp() {
       }).eq('id', selectedTicketId);
 
       if (error) throw error;
+
+      // Interaction Log (System Message)
+      const techName = allProfiles.find(p => p.id === techId)?.full_name || 'Nenhum';
+      await supabase.from('interactions').insert([{
+        ticket_id: selectedTicketId,
+        user_id: currentUser.id,
+        content: techId ? `SYSTEM_LOG:Chamado atribuído ao técnico: ${techName}` : 'SYSTEM_LOG:Atribuição do chamado removida',
+        is_internal: false
+      }]);
 
       // Audit Log
       await supabase.from('audit_logs').insert([{
@@ -2092,36 +2119,62 @@ function HelpDeskApp() {
                       </h5>
 
                       <div className="space-y-4">
-                        {interactions.map((interaction) => (
-                          <div key={interaction.id} className={cn(
-                            "flex gap-4",
-                            interaction.user_id === currentUser.id ? "flex-row-reverse" : ""
-                          )}>
-                            <div className="w-8 h-8 rounded-full bg-slate-100 flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-slate-600">
-                              {interaction.user_id === currentUser.id ? 'EU' : 'CPD'}
-                            </div>
-                            <div className={cn(
-                              "max-w-[80%] p-4 rounded-2xl text-sm",
-                              interaction.user_id === currentUser.id 
-                                ? "bg-blue-600 text-white rounded-tr-none" 
-                                : "bg-slate-100 text-slate-700 rounded-tl-none"
+                        {interactions.map((interaction) => {
+                          const isSystemLog = interaction.content.startsWith('SYSTEM_LOG:');
+                          const displayContent = isSystemLog ? interaction.content.replace('SYSTEM_LOG:', '') : interaction.content;
+
+                          if (isSystemLog) {
+                            return (
+                              <div key={interaction.id} className="flex justify-center my-6">
+                                <div className="bg-slate-50 px-6 py-2.5 rounded-full border border-slate-200 shadow-sm flex items-center gap-3">
+                                  <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                                  <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-2">
+                                    {displayContent} 
+                                    <span className="text-slate-300">•</span>
+                                    <span className="text-slate-400 font-medium lowercase">
+                                      {new Date(interaction.created_at).toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}
+                                    </span>
+                                    <span className="text-slate-300">•</span>
+                                    <span className="text-blue-600/70 font-bold">
+                                      {allProfiles.find(p => p.id === interaction.user_id)?.full_name.split(' ')[0] || 'Sistema'}
+                                    </span>
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div key={interaction.id} className={cn(
+                              "flex gap-4",
+                              interaction.user_id === currentUser.id ? "flex-row-reverse" : ""
                             )}>
-                              <p>{interaction.content}</p>
-                              <div className="flex justify-between items-center mt-2 gap-2">
-                                <p className={cn(
-                                  "text-[9px] font-bold uppercase tracking-wider",
-                                  interaction.user_id === currentUser.id ? "text-blue-200" : "text-slate-400"
-                                )}>
-                                  {allProfiles.find(p => p.id === interaction.user_id)?.full_name || 'Usuário'}
-                                </p>
-                                <p className={cn(
-                                  "text-[10px]",
-                                  interaction.user_id === currentUser.id ? "text-blue-200" : "text-slate-400"
-                                )}>{new Date(interaction.created_at).toLocaleString('pt-BR')}</p>
+                              <div className="w-8 h-8 rounded-full bg-slate-100 flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-slate-600">
+                                {interaction.user_id === currentUser.id ? 'EU' : 'CPD'}
+                              </div>
+                              <div className={cn(
+                                "max-w-[80%] p-4 rounded-2xl text-sm",
+                                interaction.user_id === currentUser.id 
+                                  ? "bg-blue-600 text-white rounded-tr-none" 
+                                  : "bg-slate-100 text-slate-700 rounded-tl-none"
+                              )}>
+                                <p>{displayContent}</p>
+                                <div className="flex justify-between items-center mt-2 gap-2">
+                                  <p className={cn(
+                                    "text-[9px] font-bold uppercase tracking-wider",
+                                    interaction.user_id === currentUser.id ? "text-blue-200" : "text-slate-400"
+                                  )}>
+                                    {allProfiles.find(p => p.id === interaction.user_id)?.full_name || 'Usuário'}
+                                  </p>
+                                  <p className={cn(
+                                    "text-[10px]",
+                                    interaction.user_id === currentUser.id ? "text-blue-200" : "text-slate-400"
+                                  )}>{new Date(interaction.created_at).toLocaleString('pt-BR')}</p>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
 
                       <div className="pt-6 border-t border-slate-100">
