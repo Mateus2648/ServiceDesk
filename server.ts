@@ -6,6 +6,8 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
+  console.log("[DEBUG] RESEND_API_KEY defined:", !!process.env.RESEND_API_KEY);
+
   app.use(express.json());
 
   // API: Logs de Auditoria (Simulado até o Firebase estar pronto)
@@ -18,6 +20,7 @@ async function startServer() {
   // API: Notificações por E-mail
   app.post("/api/notify", async (req, res) => {
     const { to, subject, html } = req.body;
+    console.log("[NOTIFY] Request received for:", to);
     
     if (!process.env.RESEND_API_KEY) {
       console.warn("[NOTIFY]: RESEND_API_KEY não configurada. E-mail não enviado.");
@@ -28,6 +31,7 @@ async function startServer() {
       const { Resend } = await import("resend");
       const resend = new Resend(process.env.RESEND_API_KEY);
       
+      console.log("[NOTIFY] Sending email via Resend...");
       const { data, error } = await resend.emails.send({
         from: "CPD Guaranésia <onboarding@resend.dev>",
         to,
@@ -36,10 +40,11 @@ async function startServer() {
       });
 
       if (error) {
-        console.error("[NOTIFY ERROR]:", error);
+        console.error("[NOTIFY ERROR]:", JSON.stringify(error, null, 2));
         return res.status(400).json({ error });
       }
 
+      console.log("[NOTIFY SUCCESS]:", data);
       res.json({ status: "sent", data });
     } catch (err: any) {
       console.error("[NOTIFY EXCEPTION]:", err);

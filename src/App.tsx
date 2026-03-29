@@ -702,21 +702,51 @@ function HelpDeskApp() {
   };
 
   const sendNotification = async (ticketId: string, subject: string, message: string) => {
+    console.log("[DEBUG] sendNotification called for ticket:", ticketId);
     try {
-      const ticket = tickets.find(t => t.id === ticketId);
-      if (!ticket) return;
+      // Tenta encontrar no estado local primeiro
+      let ticket = tickets.find(t => t.id === ticketId);
+      
+      // Se não encontrar no estado (pode estar desatualizado), busca no Supabase
+      if (!ticket) {
+        console.log("[DEBUG] Ticket not in state, fetching from Supabase...");
+        const { data, error } = await supabase.from('tickets').select('*').eq('id', ticketId).single();
+        if (error || !data) {
+          console.error("[DEBUG] Could not fetch ticket for notification:", error);
+          return;
+        }
+        ticket = data as Ticket;
+      }
 
-      const creator = allProfiles.find(p => p.id === ticket.created_by);
-      const technician = allProfiles.find(p => p.id === ticket.assigned_to);
+      // Busca perfis se allProfiles estiver vazio
+      let currentProfiles = allProfiles;
+      if (currentProfiles.length === 0) {
+        console.log("[DEBUG] allProfiles is empty, fetching from Supabase...");
+        const { data, error } = await supabase.from('profiles').select('*');
+        if (!error && data) {
+          currentProfiles = data as User[];
+          setAllProfiles(currentProfiles);
+        }
+      }
+
+      const creator = currentProfiles.find(p => p.id === ticket.created_by);
+      const technician = currentProfiles.find(p => p.id === ticket.assigned_to);
+
+      console.log("[DEBUG] Creator:", creator?.email, "Technician:", technician?.email);
 
       const recipients = [];
       if (creator?.email) recipients.push(creator.email);
       if (technician?.email) recipients.push(technician.email);
 
       const uniqueRecipients = [...new Set(recipients)];
-      if (uniqueRecipients.length === 0) return;
+      if (uniqueRecipients.length === 0) {
+        console.warn("[DEBUG] No recipients found for notification. Check if users have emails in their profiles.");
+        return;
+      }
 
-      await fetch('/api/notify', {
+      console.log("[DEBUG] Sending notification to:", uniqueRecipients);
+
+      const response = await fetch('/api/notify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -738,8 +768,19 @@ function HelpDeskApp() {
           `
         })
       });
+
+      const result = await response.json();
+      console.log("[DEBUG] Notification API response:", result);
+
+      if (!response.ok) {
+        const errorMsg = result.error?.message || result.error || "Erro desconhecido";
+        console.error("[DEBUG] API Error:", errorMsg);
+        toast.error("Erro na notificação: " + errorMsg);
+      } else {
+        console.log("[DEBUG] Notification sent successfully!");
+      }
     } catch (error) {
-      console.error("Error sending notification:", error);
+      console.error("[DEBUG] Exception in sendNotification:", error);
     }
   };
 
