@@ -197,7 +197,7 @@ function HelpDeskApp() {
       const { data, error } = await supabase
         .from('downloads')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('name', { ascending: true });
       
       if (!error && data) {
         setDownloads(data);
@@ -587,6 +587,10 @@ function HelpDeskApp() {
       (u.secretariat || '').toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [regularUsers, searchQuery]);
+
+  const sortedDownloads = useMemo(() => {
+    return [...downloads].sort((a, b) => a.name.localeCompare(b.name));
+  }, [downloads]);
 
   const handleLogin = async () => {
     try {
@@ -2074,7 +2078,7 @@ function HelpDeskApp() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {downloads.map((download) => (
+                  {sortedDownloads.map((download) => (
                     <div key={download.id} className="bg-white p-6 rounded-[32px] border border-slate-200 shadow-sm hover:shadow-md transition-all group">
                       <div className="flex items-start justify-between mb-4">
                         <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-100 overflow-hidden">
@@ -2117,7 +2121,7 @@ function HelpDeskApp() {
                       </a>
                     </div>
                   ))}
-                  {downloads.length === 0 && (
+                  {sortedDownloads.length === 0 && (
                     <div className="col-span-full py-20 text-center">
                       <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
                         <DownloadCloud size={32} className="text-slate-300" />
