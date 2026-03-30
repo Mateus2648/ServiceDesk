@@ -983,8 +983,13 @@ function HelpDeskApp() {
   };
 
   const handleSendMessage = async (content: string) => {
-    if (!selectedTicketId || !currentUser) return;
+    if (!selectedTicketId || !currentUser || !userProfile || !selectedTicket) return;
     
+    if (userProfile.role === 'TECH' && selectedTicket.assigned_to !== currentUser.id) {
+      toast.error("Você só pode interagir em chamados atribuídos a você.");
+      return;
+    }
+
     const newInteraction = {
       ticket_id: selectedTicketId,
       user_id: currentUser.id,
@@ -1084,10 +1089,12 @@ function HelpDeskApp() {
     if (!selectedTicketId || !currentUser || !userProfile || !selectedTicket) return;
 
     // Restrictions:
-    // 1. Only ADMINs can reassign tickets
+    // 1. Only ADMINs can reassign tickets, EXCEPT if a TECH is assigning to themselves and the ticket is unassigned
     if (userProfile.role === 'TECH') {
-      toast.error("Apenas administradores podem alterar a atribuição de técnicos.");
-      return;
+      if (techId !== currentUser.id || selectedTicket.assigned_to) {
+        toast.error("Apenas administradores podem alterar a atribuição de técnicos.");
+        return;
+      }
     }
 
     try {
@@ -2525,35 +2532,59 @@ function HelpDeskApp() {
                       </div>
 
                       <div className="pt-6 border-t border-slate-100">
-                        <div className="relative">
-                          <textarea 
-                            placeholder="Digite sua mensagem..."
-                            className="w-full p-4 pr-16 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all resize-none h-24"
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                const val = e.currentTarget.value;
-                                if (val.trim()) {
-                                  handleSendMessage(val);
-                                  e.currentTarget.value = '';
-                                }
-                              }
-                            }}
-                          />
-                          <button 
-                            onClick={(e) => {
-                              const textarea = e.currentTarget.previousElementSibling as HTMLTextAreaElement;
-                              if (textarea.value.trim()) {
-                                handleSendMessage(textarea.value);
-                                textarea.value = '';
-                              }
-                            }}
-                            className="absolute right-4 bottom-4 p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-md"
-                          >
-                            <Send size={18} />
-                          </button>
-                        </div>
-                        <p className="text-[10px] text-slate-400 mt-2 text-center italic">Pressione Enter para enviar</p>
+                        {userProfile?.role === 'TECH' && selectedTicket.assigned_to !== currentUser.id ? (
+                          <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6 text-center">
+                            {selectedTicket.assigned_to ? (
+                              <p className="text-blue-800 text-sm font-medium">
+                                Este chamado já está atribuído a outro técnico. Apenas o técnico responsável ou um administrador podem interagir.
+                              </p>
+                            ) : (
+                              <>
+                                <p className="text-blue-800 text-sm mb-4">
+                                  Você precisa se vincular a este chamado para interagir com o usuário.
+                                </p>
+                                <button
+                                  onClick={() => handleUpdateAssignment(currentUser.id)}
+                                  className="px-6 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-sm"
+                                >
+                                  Vincular-se ao Chamado
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        ) : (
+                          <>
+                            <div className="relative">
+                              <textarea 
+                                placeholder="Digite sua mensagem..."
+                                className="w-full p-4 pr-16 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all resize-none h-24"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    const val = e.currentTarget.value;
+                                    if (val.trim()) {
+                                      handleSendMessage(val);
+                                      e.currentTarget.value = '';
+                                    }
+                                  }
+                                }}
+                              />
+                              <button 
+                                onClick={(e) => {
+                                  const textarea = e.currentTarget.previousElementSibling as HTMLTextAreaElement;
+                                  if (textarea.value.trim()) {
+                                    handleSendMessage(textarea.value);
+                                    textarea.value = '';
+                                  }
+                                }}
+                                className="absolute right-4 bottom-4 p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-md"
+                              >
+                                <Send size={18} />
+                              </button>
+                            </div>
+                            <p className="text-[10px] text-slate-400 mt-2 text-center italic">Pressione Enter para enviar</p>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
